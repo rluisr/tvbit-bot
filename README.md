@@ -30,7 +30,7 @@ Introduction
 }
 ```
 
-[tv.go](pkg/domain/tv.go) または [Bybit API Documentation](https://bybit-exchange.github.io/docs/linear/#:~:text=Transaction%20timestamp-,order,-How%20to%20Subscribe). を参照してください。
+[tv.go](pkg/domain/tv.go) または [Bybit API Documentation](https://bybit-exchange.github.io/docs/linear/#:~:text=Transaction%20timestamp-,order,-How%20to%20Subscribe) を参照してください。
 
 tvbit-bot は Bybit API に準拠しているつもりです。
 

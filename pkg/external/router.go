@@ -2,6 +2,7 @@ package external
 
 import (
 	"context"
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"log"
 	"net/http"
@@ -12,7 +13,10 @@ import (
 	"github.com/rluisr/tvbit-bot/pkg/adapter/controllers"
 )
 
-var Router *gin.Engine
+var (
+	Router  *gin.Engine
+	version string
+)
 
 func init() {
 	logger := &Logger{}
@@ -22,6 +26,7 @@ func init() {
 
 	tvController := controllers.NewTVController(logger)
 
+	Router.GET("/", func(c *gin.Context) { c.String(http.StatusOK, fmt.Sprintln("version: ", version)) })
 	Router.POST("/tv", func(c *gin.Context) { tvController.Handle(c) })
 
 	var addr string
