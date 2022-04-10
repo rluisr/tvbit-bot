@@ -1,4 +1,4 @@
-# tvbit-bot
+tvbit-bot
 ============
 
 tvbit-bot is TradingView webhook handler for Bybit.
