@@ -1,4 +1,4 @@
-# tvbit-bot
+tvbit-bot
 ============
 
 [English](README_en.md)
