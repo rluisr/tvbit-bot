@@ -1,9 +1,13 @@
 package main
 
 import (
+	"fmt"
 	"github.com/rluisr/tvbit-bot/pkg/external"
 )
 
 func main() {
-	external.Router.Run()
+	err := external.Router.Run()
+	if err != nil {
+		panic(fmt.Errorf("failed to run router %w", err))
+	}
 }
