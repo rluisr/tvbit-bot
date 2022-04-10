@@ -53,3 +53,5 @@ Limitation
 tvbit-bot は現在 close/cancel ポジションをサポートしていません。
 
 Welcome your PR.
+
+Twitter [@rarirureluis](https://twitter.com/rarirureluis)
