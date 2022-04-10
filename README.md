@@ -1,7 +1,10 @@
 tvbit-bot
 ============
 
-[English](README_en.md)
+[![lint](https://github.com/rluisr/tvbit-bot/actions/workflows/lint.yml/badge.svg?branch=master)](https://github.com/rluisr/tvbit-bot/actions/workflows/lint.yml)
+[![release](https://github.com/rluisr/tvbit-bot/actions/workflows/release.yml/badge.svg)](https://github.com/rluisr/tvbit-bot/actions/workflows/release.yml)
+
+[English README](README_en.md)
 
 tvbit-bot は TradingView のアラートから Bybit へ注文を行う BOT です。
 
