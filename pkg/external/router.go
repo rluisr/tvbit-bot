@@ -21,8 +21,8 @@ var (
 func init() {
 	logger := &Logger{}
 
-	Router = gin.New()
-	Router.ForwardedByClientIP = true
+	Router = gin.Default()
+	//Router.ForwardedByClientIP = true
 
 	tvController := controllers.NewTVController(logger)
 
@@ -36,8 +36,8 @@ func init() {
 	} else {
 		addr = ":8082"
 	}
-	if os.Getenv("NOMAD_PORT_api") != "" {
-		addr = ":" + os.Getenv("NOMAD_PORT_api")
+	if os.Getenv("PORT") != "" {
+		addr = ":" + os.Getenv("PORT")
 	}
 
 	srv := &http.Server{

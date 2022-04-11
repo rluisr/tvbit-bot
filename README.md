@@ -12,8 +12,7 @@ tvbit = T(rading)V(iew) (By)bit
 Introduction
 -------------
 
-1. アプリを動かす
-2. 以下の JSON を参考に TradingView のアラートメッセージを設定しアラートを作成する
+1. 以下の JSON を参考に TradingView のアラートメッセージを設定しアラートを作成する
 
 ```json
 {
@@ -35,6 +34,12 @@ Introduction
 [tv.go](pkg/domain/tv.go) または [Bybit API Documentation](https://bybit-exchange.github.io/docs/linear/#:~:text=Transaction%20timestamp-,order,-How%20to%20Subscribe) を参照してください。
 
 tvbit-bot は Bybit API に準拠しているつもりです。
+
+Setup
+-----
+
+```shell
+```
 
 tvbit-bot.hcloud.ltd
 --------------------
