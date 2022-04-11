@@ -7,6 +7,15 @@ RUN apk --no-cache add git openssh build-base
 RUN cd cmd && go build -o app .
 
 FROM alpine as production
+
+LABEL maintainer="rluisr" \
+  org.opencontainers.image.url="https://github.com/rluisr/tvbit-bot" \
+  org.opencontainers.image.source="https://github.com/rluisr/tvbit-bot" \
+  org.opencontainers.image.vendor="rluisr" \
+  org.opencontainers.image.title="tvbit-bot" \
+  org.opencontainers.image.description="TradingView webhook handler for Bybit." \
+  org.opencontainers.image.licenses="AGPL"
+
 EXPOSE 8080
 RUN <<EOF
     apk add --no-cache ca-certificates libc6-compat tzdata \
