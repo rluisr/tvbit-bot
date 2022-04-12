@@ -6,8 +6,8 @@ on:
       - '*'
 
 jobs:
-  release:
-    name: Release
+  binary_release:
+    name: Binary Release
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -26,8 +26,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.ACTIONS_TOKEN }}
 
-  build:
-    name: Build
+  container_release:
+    name: Container Release
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -47,8 +47,6 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - name: version tag add GITHUB_ENV
-        run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> "$GITHUB_ENV"
       - name: Build and push
         id: docker_build
         uses: docker/build-push-action@v2
@@ -57,7 +55,7 @@ jobs:
           file: ./Dockerfile
           platforms: linux/amd64,linux/arm64
           build-args: |
-            VERSION={{ env.VERSION }}
+            VERSION=${{github.ref_name}}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           push: ${{ github.event_name != 'pull_request' }}
