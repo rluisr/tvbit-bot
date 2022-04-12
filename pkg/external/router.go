@@ -20,7 +20,6 @@ package external
 
 import (
 	"context"
-	"fmt"
 	"github.com/gin-gonic/gin"
 	"log"
 	"net/http"
@@ -44,7 +43,14 @@ func init() {
 
 	tvController := controllers.NewTVController(logger)
 
-	Router.GET("/", func(c *gin.Context) { c.String(http.StatusOK, fmt.Sprintln("version: ", version)) })
+	Router.GET("/", func(c *gin.Context) {
+		c.JSON(http.StatusOK, map[string]string{
+			"version": version,
+			"repo":    "https://github.com/rluisr/tvbit-bot",
+			"owner":   "rluisr / @rarirureluis",
+		})
+	})
+
 	Router.POST("/tv", func(c *gin.Context) { tvController.Handle(c) })
 
 	var addr string

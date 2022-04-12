@@ -38,8 +38,18 @@ tvbit-bot は Bybit API に準拠しているつもりです。
 Setup
 -----
 
+環境変数 `PORT` でリッスンポートを上書きできます。
+
+### Docker
+
 ```shell
+$ docker run ghcr.io/rluisr/tvbit-bot:latest --name tvbit-bot -p 8080:8080 -d
 ```
+
+### Binary
+
+1. [release page.](https://github.com/rluisr/tvbit-bot/releases) からバイナリをダウンロード
+2. `$ ./app`
 
 tvbit-bot.hcloud.ltd
 --------------------
