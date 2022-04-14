@@ -47,7 +47,7 @@ $ docker run ghcr.io/rluisr/tvbit-bot:latest --name tvbit-bot -p 8080:8080 -d
 
 ### Binary
 
-1. [release page.](https://github.com/rluisr/tvbit-bot/releases) からバイナリをダウンロード
+1. Download a binary from [release page.](https://github.com/rluisr/tvbit-bot/releases)
 2. `$ ./app`
 
 tvbit-bot.hcloud.ltd
