@@ -17,16 +17,16 @@ Introduction
 ```json
 {
   "is_test_net": true,
-  "api_key": "6pNgDhklvGadvr8D95",
-  "api_secret_key": "TRgXYMOOVUBzQVb7m38PZ1ze59UrQC1KTW1N",
+  "api_key": "",
+  "api_secret_key": "",
   "order": {
     "symbol": "BTCUSDT",
     "type": "Market",
     "price": 0,
-    "side": "Buy",
-    "qty": 0.014,
+    "side": "Sell",
+    "qty": 0.028,
     "tp": 0,
-    "sl": 0
+    "sl": {{high}}
   }
 }
 ```
