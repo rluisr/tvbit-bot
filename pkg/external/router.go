@@ -21,6 +21,7 @@ package external
 import (
 	"context"
 	"github.com/gin-gonic/gin"
+	"github.com/rluisr/tvbit-bot/pkg/external/mysql"
 	"log"
 	"net/http"
 	"os"
@@ -36,22 +37,29 @@ var (
 )
 
 func init() {
-	logger := &Logger{}
+	rwDB, roDB := mysql.Connect()
 
 	Router = gin.Default()
-	//Router.ForwardedByClientIP = true
+	Router.ForwardedByClientIP = true
 
-	tvController := controllers.NewTVController(logger)
+	tvController := controllers.NewTVController(roDB)
+	settingController := controllers.NewSettingController(rwDB, roDB)
 
 	Router.GET("/", func(c *gin.Context) {
 		c.JSON(http.StatusOK, map[string]string{
 			"version": version,
 			"repo":    "https://github.com/rluisr/tvbit-bot",
-			"owner":   "rluisr / @rarirureluis",
+			"owner":   "GitHub: rluisr / Twitter @rarirureluis",
 		})
 	})
 
 	Router.POST("/tv", func(c *gin.Context) { tvController.Handle(c) })
+
+	setting := Router.Group("/setting")
+	{
+		setting.GET("", func(c *gin.Context) { settingController.Get(c) })
+		setting.PUT("", func(c *gin.Context) { settingController.Set(c) })
+	}
 
 	var addr string
 	if os.Getenv("SERVER_ENV") == "local" {
@@ -80,12 +88,11 @@ func init() {
 	<-quit
 	log.Println("Shutdown Server ...")
 
-	log.Println("Close connections ...")
-
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	if err := srv.Shutdown(ctx); err != nil {
 		log.Fatal("Server Shutdown:", err)
 	}
 	defer cancel()
 	log.Println("Server exiting")
+	os.Exit(0)
 }

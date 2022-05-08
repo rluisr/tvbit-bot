@@ -21,9 +21,12 @@ package main
 import (
 	"fmt"
 	"github.com/rluisr/tvbit-bot/pkg/external"
+	"github.com/rluisr/tvbit-bot/pkg/external/mysql"
 )
 
 func main() {
+	defer mysql.CloseConn()
+
 	err := external.Router.Run()
 	if err != nil {
 		panic(fmt.Errorf("failed to run router %w", err))

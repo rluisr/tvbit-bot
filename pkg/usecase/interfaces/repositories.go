@@ -24,5 +24,10 @@ import (
 )
 
 type TVRepository interface {
-	CreateOrder(domain.TV, *rest.ByBit) (rest.Order, error)
+	CreateOrder(domain.TV, *rest.ByBit) (*rest.Order, error)
+}
+
+type SettingRepository interface {
+	Get(domain.Setting) (domain.Setting, error)
+	Set(domain.Setting) (domain.Setting, error)
 }

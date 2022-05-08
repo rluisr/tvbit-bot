@@ -18,6 +18,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package domain
 
+import "github.com/frankrap/bybit-api/rest"
+
 type TV struct {
 	IsTestNet    bool    `json:"is_test_net"`
 	APIKey       string  `json:"api_key" binding:"required"`
@@ -33,4 +35,10 @@ type TVOrder struct {
 	QTY    float64 `json:"qty" binding:"required"`
 	TP     float64 `json:"tp"`
 	SL     float64 `json:"sl"`
+}
+
+type TVOrderResponse struct {
+	Success bool        `json:"successful" binding:"required"`
+	Reason  string      `json:"reason,omitempty" binding:"required"`
+	Order   *rest.Order `json:"order"`
 }

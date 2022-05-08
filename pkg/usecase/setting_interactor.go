@@ -16,12 +16,21 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-package external
+package usecase
 
-import "log"
+import (
+	"github.com/rluisr/tvbit-bot/pkg/domain"
+	"github.com/rluisr/tvbit-bot/pkg/usecase/interfaces"
+)
 
-type Logger struct{}
+type SettingInteractor struct {
+	SettingRepository interfaces.SettingRepository
+}
 
-func (logger Logger) Log(args ...interface{}) {
-	log.Println(args...)
+func (i *SettingInteractor) Get(setting domain.Setting) (domain.Setting, error) {
+	return i.SettingRepository.Get(setting)
+}
+
+func (i *SettingInteractor) Set(setting domain.Setting) (domain.Setting, error) {
+	return i.SettingRepository.Set(setting)
 }
