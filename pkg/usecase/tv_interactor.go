@@ -26,9 +26,21 @@ import (
 
 type TVInteractor struct {
 	TVRepository interfaces.TVRepository
-	Logger       interfaces.Logger
 }
 
-func (i *TVInteractor) CreateOrder(req domain.TV, bybitClient *rest.ByBit) (rest.Order, error) {
-	return i.TVRepository.CreateOrder(req, bybitClient)
+func (i *TVInteractor) CreateOrder(req domain.TV, bybitClient *rest.ByBit) (domain.TVOrderResponse, error) {
+	order, err := i.TVRepository.CreateOrder(req, bybitClient)
+	if err != nil {
+		return domain.TVOrderResponse{
+			Success: false,
+			Reason:  err.Error(),
+			Order:   nil,
+		}, err
+	}
+
+	if order == nil {
+		return domain.TVOrderResponse{Success: true, Reason: "order is cancelled by \"start_time\", \"stop_time\" setting", Order: nil}, nil
+	}
+
+	return domain.TVOrderResponse{Success: true, Order: order}, nil
 }

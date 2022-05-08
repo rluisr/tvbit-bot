@@ -16,8 +16,12 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-package interfaces
+package domain
 
-type Logger interface {
-	Log(args ...interface{})
+type Setting struct {
+	ID           uint64 `gorm:"primaryKey,autoIncrement"`
+	APIKey       string `gorm:"type:varchar(255);unique;index:idx_api" json:"api_key" binding:"required"`
+	APISecretKey string `gorm:"type:varchar(255);unique;index:idx_api" json:"api_secret_key" binding:"required"`
+	StartTime    string `gorm:"type:char(5)" json:"start_time"` // eg "09:00"
+	StopTime     string `gorm:"type:char(5)" json:"stop_time"`  // eg "21:00"
 }
