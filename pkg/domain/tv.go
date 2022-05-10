@@ -28,13 +28,13 @@ type TV struct {
 }
 
 type TVOrder struct {
-	Type   string  `json:"type" binding:"required"`   // "Market" or "Limit"
-	Symbol string  `json:"symbol" binding:"required"` // eg: BTCUSDT
-	Side   string  `json:"side" binding:"required"`   // "Buy" or "Sell"
-	Price  float64 `json:"price"`                     // Set 0 if order_type is Market
-	QTY    float64 `json:"qty" binding:"required"`
-	TP     float64 `json:"tp"`
-	SL     float64 `json:"sl"`
+	Type   string      `json:"type" binding:"required"`   // "Market" or "Limit"
+	Symbol string      `json:"symbol" binding:"required"` // eg: BTCUSDT
+	Side   string      `json:"side" binding:"required"`   // "Buy" or "Sell"
+	Price  float64     `json:"price"`                     // Set 0 if order_type is Market
+	QTY    float64     `json:"qty" binding:"required"`
+	TP     interface{} `json:"tp"`
+	SL     interface{} `json:"sl"`
 }
 
 type TVOrderResponse struct {
