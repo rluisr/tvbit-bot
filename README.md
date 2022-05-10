@@ -37,7 +37,8 @@ Introduction
 You need to set `tp` and `sl` as a string.
 
 `{{high}}` is an embedded value of TradingView, Also you can set any other TradingView's embedded values.   
-Other methods, you can set as a percent like `"tp": "10%"`. It means if price is 30,000 and qty is 0.1, TP is set `30,033.5`
+Other methods, you can set as a percent like `"tp": "10%"`. The formula is `(price * percent * 0.1 * qty) + price`.  
+Note that this is calculated from the closing price one minute ago.
 
 see [tv.go](pkg/domain/tv.go) or [Bybit API Documentation](https://bybit-exchange.github.io/docs/linear/#:~:text=Transaction%20timestamp-,order,-How%20to%20Subscribe).
 

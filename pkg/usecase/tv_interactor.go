@@ -29,6 +29,26 @@ type TVInteractor struct {
 }
 
 func (i *TVInteractor) CreateOrder(req domain.TV, bybitClient *rest.ByBit) (domain.TVOrderResponse, error) {
+	var err error
+
+	req.Order.TP, err = i.TVRepository.CalculateTPSL(req, bybitClient, req.Order.TP, "TP")
+	if err != nil {
+		return domain.TVOrderResponse{
+			Success: false,
+			Reason:  err.Error(),
+			Order:   nil,
+		}, err
+	}
+
+	req.Order.SL, err = i.TVRepository.CalculateTPSL(req, bybitClient, req.Order.SL, "SL")
+	if err != nil {
+		return domain.TVOrderResponse{
+			Success: false,
+			Reason:  err.Error(),
+			Order:   nil,
+		}, err
+	}
+
 	order, err := i.TVRepository.CreateOrder(req, bybitClient)
 	if err != nil {
 		return domain.TVOrderResponse{
