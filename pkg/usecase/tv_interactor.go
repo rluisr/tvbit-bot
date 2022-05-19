@@ -22,6 +22,7 @@ import (
 	"github.com/frankrap/bybit-api/rest"
 	"github.com/rluisr/tvbit-bot/pkg/domain"
 	"github.com/rluisr/tvbit-bot/pkg/usecase/interfaces"
+	"log"
 )
 
 type TVInteractor struct {
@@ -60,6 +61,12 @@ func (i *TVInteractor) CreateOrder(req domain.TV, bybitClient *rest.ByBit) (doma
 
 	if order == nil {
 		return domain.TVOrderResponse{Success: true, Reason: "order is cancelled by \"start_time\", \"stop_time\" setting", Order: nil}, nil
+	}
+
+	err = i.TVRepository.SaveOrder(req, order)
+	if err != nil {
+		// order is created, do not return err here.
+		log.Printf("a order is created but failed to save order history to MySQL err: %s\n", err.Error())
 	}
 
 	return domain.TVOrderResponse{Success: true, Order: order}, nil
