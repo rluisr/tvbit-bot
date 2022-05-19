@@ -42,7 +42,7 @@ func init() {
 	Router = gin.Default()
 	Router.ForwardedByClientIP = true
 
-	tvController := controllers.NewTVController(roDB)
+	tvController := controllers.NewTVController(rwDB, roDB)
 	settingController := controllers.NewSettingController(rwDB, roDB)
 
 	Router.GET("/", func(c *gin.Context) {

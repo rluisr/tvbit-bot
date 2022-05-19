@@ -25,6 +25,7 @@ import (
 
 type TVRepository interface {
 	CreateOrder(domain.TV, *rest.ByBit) (*rest.Order, error)
+	SaveOrder(domain.TV, *rest.Order) error
 	CalculateTPSL(domain.TV, *rest.ByBit, interface{}, string) (float64, error)
 }
 

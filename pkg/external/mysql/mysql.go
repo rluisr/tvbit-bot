@@ -63,7 +63,7 @@ func Connect() (*gorm.DB, *gorm.DB) {
 	if err != nil {
 		panic(fmt.Errorf("mysql rw: %s", err))
 	}
-	err = rwDB.AutoMigrate(&domain.Setting{})
+	err = rwDB.AutoMigrate(&domain.Setting{}, &domain.TVOrder{})
 	if err != nil {
 		panic(fmt.Errorf("AutoMigrate failed err: %w", err))
 	}

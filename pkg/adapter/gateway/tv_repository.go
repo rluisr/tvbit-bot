@@ -33,6 +33,7 @@ import (
 
 type (
 	TVRepository struct {
+		RWDB *gorm.DB
 		RODB *gorm.DB
 	}
 )
@@ -49,6 +50,23 @@ func (r *TVRepository) CreateOrder(req domain.TV, bybitClient *rest.ByBit) (*res
 	}
 
 	return nil, nil
+}
+
+func (r *TVRepository) SaveOrder(req domain.TV, order *rest.Order) error {
+	f64Price, _ := order.Price.Float64()
+	f64Qty, _ := order.Qty.Float64()
+
+	orderHistory := domain.TVOrder{
+		Type:   order.OrderType,
+		Symbol: order.Symbol,
+		Side:   order.Side,
+		Price:  f64Price,
+		QTY:    f64Qty,
+		TP:     req.Order.TP,
+		SL:     req.Order.SL,
+	}
+
+	return r.RWDB.Save(&orderHistory).Error
 }
 
 // isOK: current time is between "start_time" and "stop_time"
