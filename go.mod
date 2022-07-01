@@ -7,7 +7,7 @@ require (
 	github.com/frankrap/bybit-api v1.0.8
 	github.com/gin-gonic/gin v1.7.7
 	gorm.io/driver/mysql v1.3.3
-	gorm.io/gorm v1.23.5
+	gorm.io/gorm v1.23.7
 )
 
 require (
