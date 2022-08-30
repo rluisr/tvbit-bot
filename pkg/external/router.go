@@ -53,13 +53,13 @@ func init() {
 		})
 	})
 
-	Router.POST("/tv", func(c *gin.Context) { tvController.Handle(c) })
+	tv := Router.Group("/tv")
+	tv.GET("", func(c *gin.Context) { c.Redirect(http.StatusPermanentRedirect, "/") })
+	tv.POST("", func(c *gin.Context) { tvController.Handle(c) })
 
 	setting := Router.Group("/setting")
-	{
-		setting.GET("", func(c *gin.Context) { settingController.Get(c) })
-		setting.PUT("", func(c *gin.Context) { settingController.Set(c) })
-	}
+	setting.GET("", func(c *gin.Context) { settingController.Get(c) })
+	setting.PUT("", func(c *gin.Context) { settingController.Set(c) })
 
 	var addr string
 	if os.Getenv("SERVER_ENV") == "local" {
