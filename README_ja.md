@@ -9,6 +9,8 @@ tvbit-bot は TradingView のアラートから Bybit へ注文を行う BOT で
 
 tvbit = T(rading)V(iew) (By)bit
 
+Twitter [@rarirureluis](https://twitter.com/rarirureluis)
+
 Introduction
 -------------
 
@@ -34,10 +36,11 @@ Introduction
 
 ### TP and SL
 
-You need to set `tp` and `sl` as a string.
+`tp` と `sl` プロパティは必須です。
 
-`{{high}}` is an embedded value of TradingView, Also you can set any other TradingView's embedded values.   
-Other methods, you can set as a percent like `"tp": "10%"`. It means if price is 30,000 and qty is 0.1, TP is set `30,033.5`
+- `{{high}}` は TradingView の埋め込み変数です。
+- 他の方法では `"tp": "10%"`. のように注文時の価格からのパーセントで指定できます。計算方法：`(price * percent * 0.1 * qty) + price`. なお、これは1分前の終値から計算しています。
+- `+/-` にも対応し、現在価格から引き算・足し算した価格が設定されます。例）`"tp": "+40", "sl": "-20"` これは `TP: 現在価格 + 40` and `SL: 現在価格 - 20`.
 
 [tv.go](pkg/domain/tv.go) または [Bybit API Documentation](https://bybit-exchange.github.io/docs/linear/#:~:text=Transaction%20timestamp-,order,-How%20to%20Subscribe) を参照してください。
 
@@ -52,9 +55,9 @@ Path
 
 ### PUT /setting
 
-You can set the time of day creating order.
+tvbit-bot を稼働させる時間帯を指定できます。
 
-Default is all time.
+デフォルトは24時間です。
 
 **All times are calculated in UTC.**
 
@@ -75,7 +78,7 @@ nothing
 
 ### GET /setting
 
-Get your setting.
+現在の設定を確認
 
 #### Request body
 

@@ -9,6 +9,8 @@ tvbit-bot is TradingView webhook handler for Bybit.
 
 tvbit = T(rading)V(iew) (By)bit
 
+Twitter [@rarirureluis](https://twitter.com/rarirureluis)
+
 Introduction
 -------------
 
@@ -36,9 +38,9 @@ Introduction
 
 You need to set `tp` and `sl` as a string.
 
-`{{high}}` is an embedded value of TradingView, Also you can set any other TradingView's embedded values.   
-Other methods, you can set as a percent like `"tp": "10%"`. The formula is `(price * percent * 0.1 * qty) + price`.  
-Note that this is calculated from the closing price one minute ago.
+- `{{high}}` is an embedded value of TradingView, Also you can set any other TradingView's embedded values.   
+- Other methods, you can set as a percent like `"tp": "10%"`. The formula is `(price * percent * 0.1 * qty) + price`. Note that this is calculated from the closing price one minute ago.
+- `"tp": "+40", "sl": "-20"` means, `TP: current price + 40` and `SL: current price - 20`.
 
 see [tv.go](pkg/domain/tv.go) or [Bybit API Documentation](https://bybit-exchange.github.io/docs/linear/#:~:text=Transaction%20timestamp-,order,-How%20to%20Subscribe).
 
