@@ -18,10 +18,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package domain
 
+import "database/sql"
+
 type Setting struct {
-	ID           uint64 `gorm:"primaryKey,autoIncrement"`
-	APIKey       string `gorm:"type:varchar(255);unique;index:idx_api" json:"api_key" binding:"required"`
-	APISecretKey string `gorm:"type:varchar(255);unique;index:idx_api" json:"api_secret_key" binding:"required"`
-	StartTime    string `gorm:"type:char(5)" json:"start_time"` // eg "09:00"
-	StopTime     string `gorm:"type:char(5)" json:"stop_time"`  // eg "21:00"
+	ID           uint64         `gorm:"primaryKey,autoIncrement"`
+	APIKey       string         `gorm:"type:varchar(255);unique;index:idx_api" json:"api_key" binding:"required"`
+	APISecretKey string         `gorm:"type:varchar(255);unique;index:idx_api" json:"api_secret_key" binding:"required"`
+	StartTime    sql.NullString `gorm:"type:char(5);default:null" json:"start_time"` // eg "09:00"
+	StopTime     sql.NullString `gorm:"type:char(5);default:null" json:"stop_time"`  // eg "21:00"
 }

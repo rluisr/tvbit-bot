@@ -49,7 +49,7 @@ func init() {
 		c.JSON(http.StatusOK, map[string]string{
 			"version": version,
 			"repo":    "https://github.com/rluisr/tvbit-bot",
-			"owner":   "GitHub: rluisr / Twitter @rarirureluis",
+			"owner":   "rluisr / rarirureluis",
 		})
 	})
 

@@ -80,6 +80,10 @@ func (r *TVRepository) isOK(req domain.TV) (bool, error) {
 		return false, err
 	}
 
+	if !setting.StartTime.Valid || !setting.StopTime.Valid {
+		return true, nil
+	}
+
 	utc := utils.UTC()
 	now := time.Now().In(utc)
 
@@ -91,8 +95,8 @@ func (r *TVRepository) isOK(req domain.TV) (bool, error) {
 		return false, err
 	}
 
-	userStartTimeStr := strings.Replace(setting.StartTime, ":", "", 1)
-	userStopTimeStr := strings.Replace(setting.StopTime, ":", "", 1)
+	userStartTimeStr := strings.Replace(setting.StartTime.String, ":", "", 1)
+	userStopTimeStr := strings.Replace(setting.StopTime.String, ":", "", 1)
 
 	userStartTime, err := strconv.Atoi(userStartTimeStr)
 	if err != nil {
@@ -122,14 +126,16 @@ func (r *TVRepository) CalculateTPSL(req domain.TV, bybitClient *rest.ByBit, val
 		return 0, nil
 	}
 
+	currentPrice, err := r.getCurrentPrice(req.Order.Symbol, bybitClient)
+	if err != nil {
+		return 0, err
+	}
+
 	if strings.Contains(str, "%") {
 		var price float64
 
 		if req.Order.Price == 0 {
-			price, err = r.getCurrentPrice(req.Order.Symbol, bybitClient)
-			if err != nil {
-				return 0, err
-			}
+			price = currentPrice
 		} else {
 			price = req.Order.Price
 		}
@@ -155,6 +161,23 @@ func (r *TVRepository) CalculateTPSL(req domain.TV, bybitClient *rest.ByBit, val
 		default:
 			return 0, fmt.Errorf("unknown request: %v / isType: %s", req, isType)
 		}
+	}
+
+	if strings.Contains(str, "+") {
+		inputPriceString := strings.Replace(str, "+", "", 1)
+		inputPrice, err := strconv.Atoi(inputPriceString)
+		if err != nil {
+			return 0, fmt.Errorf("convert string to int err %w", err)
+		}
+		return currentPrice + float64(inputPrice), nil
+	}
+	if strings.Contains(str, "-") {
+		inputPriceString := strings.Replace(str, "-", "", 1)
+		inputPrice, err := strconv.Atoi(inputPriceString)
+		if err != nil {
+			return 0, fmt.Errorf("convert string to int err %w", err)
+		}
+		return currentPrice - float64(inputPrice), nil
 	}
 
 	f64, isOK := value.(float64)
