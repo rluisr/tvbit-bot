@@ -19,13 +19,17 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package gateway
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/frankrap/bybit-api/rest"
 	"github.com/rluisr/tvbit-bot/pkg/domain"
+	"github.com/rluisr/tvbit-bot/pkg/external/bybit"
 	"github.com/rluisr/tvbit-bot/utils"
 	"gorm.io/gorm"
+	"io"
 	"math"
+	"net/http"
 	"strconv"
 	"strings"
 	"time"
@@ -33,8 +37,9 @@ import (
 
 type (
 	TVRepository struct {
-		RWDB *gorm.DB
-		RODB *gorm.DB
+		RWDB       *gorm.DB
+		RODB       *gorm.DB
+		HTTPClient *http.Client
 	}
 )
 
@@ -67,6 +72,87 @@ func (r *TVRepository) SaveOrder(req domain.TV, order *rest.Order) error {
 	}
 
 	return r.RWDB.Save(&orderHistory).Error
+}
+
+func (r *TVRepository) CalculateTPSL(req domain.TV, value interface{}, isType string) (float64, error) {
+	var err error
+
+	str, isOK := value.(string)
+	if !isOK {
+		return 0, fmt.Errorf("failed to assertion to string: %v", value)
+	}
+
+	if str == "" || str == "0" {
+		return 0, nil
+	}
+
+	currentPrice, err := r.getCurrentPrice(req.Order.Symbol)
+	if err != nil {
+		return 0, err
+	}
+
+	if strings.Contains(str, "%") {
+		var price float64
+
+		if req.Order.Price == 0 {
+			price = currentPrice
+		} else {
+			price = req.Order.Price
+		}
+
+		tpslStr := strings.Replace(value.(string), "%", "", 1)
+		tpsl, err := strconv.ParseFloat(tpslStr, 64)
+		if err != nil {
+			return 0, fmt.Errorf("failed to parse to float64 %s", tpslStr)
+		}
+		tpsl = tpsl * 0.1
+
+		switch req.Order.Side {
+		case "Buy":
+			if isType == "TP" {
+				return (price * tpsl * req.Order.QTY) + price, nil
+			}
+			return math.Abs((price * tpsl * req.Order.QTY) - price), nil
+		case "Sell":
+			if isType == "SL" {
+				return (price * tpsl * req.Order.QTY) + price, nil
+			}
+			return math.Abs((price * tpsl * req.Order.QTY) - price), nil
+		default:
+			return 0, fmt.Errorf("unknown request: %v / isType: %s", req, isType)
+		}
+	}
+
+	if strings.Contains(str, "+") {
+		inputPriceString := strings.Replace(str, "+", "", 1)
+		inputPrice, err := strconv.Atoi(inputPriceString)
+		if err != nil {
+			return 0, fmt.Errorf("convert string to int err %w", err)
+		}
+		if req.Order.Side == "Sell" {
+			return currentPrice - float64(inputPrice), nil
+		}
+		return currentPrice + float64(inputPrice), nil
+	}
+	if strings.Contains(str, "-") {
+		inputPriceString := strings.Replace(str, "-", "", 1)
+		inputPrice, err := strconv.Atoi(inputPriceString)
+		if err != nil {
+			return 0, fmt.Errorf("convert string to int err %w", err)
+		}
+		if req.Order.Side == "Sell" {
+			return currentPrice + float64(inputPrice), nil
+		}
+		return currentPrice - float64(inputPrice), nil
+	}
+
+	f64, isOK := value.(float64)
+	if !isOK {
+		return 0, fmt.Errorf("failed to assertion to float64: %v", value)
+	}
+
+	return f64, nil
+
 }
 
 // isOK: current time is between "start_time" and "stop_time"
@@ -114,91 +200,33 @@ func (r *TVRepository) isOK(req domain.TV) (bool, error) {
 	return false, nil
 }
 
-func (r *TVRepository) CalculateTPSL(req domain.TV, bybitClient *rest.ByBit, value interface{}, isType string) (float64, error) {
-	var err error
+// getCurrentPrice returns mark price
+func (r *TVRepository) getCurrentPrice(symbol string) (float64, error) {
+	tickersURL := fmt.Sprintf("%sderivatives/v3/public/tickers?category=linear&symbol=%s", bybit.BaseURL, symbol)
 
-	str, isOK := value.(string)
-	if !isOK {
-		return 0, fmt.Errorf("failed to assertion to string: %v", value)
+	req, _ := http.NewRequest(http.MethodGet, tickersURL, http.NoBody)
+	resp, err := r.HTTPClient.Do(req)
+	if err != nil {
+		return 0, err
 	}
+	defer resp.Body.Close()
 
-	if str == "" || str == "0" {
-		return 0, nil
-	}
-
-	currentPrice, err := r.getCurrentPrice(req.Order.Symbol, bybitClient)
+	b, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return 0, err
 	}
 
-	if strings.Contains(str, "%") {
-		var price float64
-
-		if req.Order.Price == 0 {
-			price = currentPrice
-		} else {
-			price = req.Order.Price
-		}
-
-		tpslStr := strings.Replace(value.(string), "%", "", 1)
-		tpsl, err := strconv.ParseFloat(tpslStr, 64)
-		if err != nil {
-			return 0, fmt.Errorf("failed to parse to float64 %s", tpslStr)
-		}
-		tpsl = tpsl * 0.1
-
-		switch req.Order.Side {
-		case "Buy":
-			if isType == "TP" {
-				return (price * tpsl * req.Order.QTY) + price, nil
-			}
-			return math.Abs((price * tpsl * req.Order.QTY) - price), nil
-		case "Sell":
-			if isType == "SL" {
-				return (price * tpsl * req.Order.QTY) + price, nil
-			}
-			return math.Abs((price * tpsl * req.Order.QTY) - price), nil
-		default:
-			return 0, fmt.Errorf("unknown request: %v / isType: %s", req, isType)
-		}
-	}
-
-	if strings.Contains(str, "+") {
-		inputPriceString := strings.Replace(str, "+", "", 1)
-		inputPrice, err := strconv.Atoi(inputPriceString)
-		if err != nil {
-			return 0, fmt.Errorf("convert string to int err %w", err)
-		}
-		return currentPrice + float64(inputPrice), nil
-	}
-	if strings.Contains(str, "-") {
-		inputPriceString := strings.Replace(str, "-", "", 1)
-		inputPrice, err := strconv.Atoi(inputPriceString)
-		if err != nil {
-			return 0, fmt.Errorf("convert string to int err %w", err)
-		}
-		return currentPrice - float64(inputPrice), nil
-	}
-
-	f64, isOK := value.(float64)
-	if !isOK {
-		return 0, fmt.Errorf("failed to assertion to float64: %v", value)
-	}
-
-	return f64, nil
-
-}
-
-// getCurrentPrice returns close price one minute ago
-func (r *TVRepository) getCurrentPrice(symbol string, bybitClient *rest.ByBit) (float64, error) {
-	_, _, resp, err := bybitClient.LinearGetKLine(symbol, "1", time.Now().Unix()-60, 1)
+	var ticker domain.Ticker
+	err = json.Unmarshal(b, &ticker)
 	if err != nil {
-		return 0, fmt.Errorf("failed to get current price err: %w", err)
+		return 0, err
 	}
 
-	if len(resp) == 0 {
-		return 0, fmt.Errorf("failed to get current price. invalid query")
+	markPriceStr := ticker.Result.List[0].MarkPrice
+	markPrice, err := strconv.ParseFloat(markPriceStr, 64)
+	if err != nil {
+		return 0, err
 	}
 
-	return resp[0].Close, nil
+	return markPrice, nil
 }

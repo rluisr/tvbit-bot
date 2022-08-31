@@ -32,12 +32,13 @@ type TVController struct {
 	Interactor usecase.TVInteractor
 }
 
-func NewTVController(rwDB, roDB *gorm.DB) *TVController {
+func NewTVController(rwDB, roDB *gorm.DB, httpClient *http.Client) *TVController {
 	return &TVController{
 		Interactor: usecase.TVInteractor{
 			TVRepository: &gateway.TVRepository{
-				RWDB: rwDB,
-				RODB: roDB,
+				RWDB:       rwDB,
+				RODB:       roDB,
+				HTTPClient: httpClient,
 			},
 		},
 	}

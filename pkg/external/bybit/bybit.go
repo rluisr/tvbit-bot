@@ -23,11 +23,12 @@ import (
 	"github.com/rluisr/tvbit-bot/pkg/domain"
 )
 
+var BaseURL = "https://api.bybit.com/"
+
 func Init(req domain.TV) *rest.ByBit {
-	baseURL := "https://api.bybit.com/"
 	if req.IsTestNet {
-		baseURL = "https://api-testnet.bybit.com/"
+		BaseURL = "https://api-testnet.bybit.com/"
 	}
 
-	return rest.New(nil, baseURL, req.APIKey, req.APISecretKey, false)
+	return rest.New(nil, BaseURL, req.APIKey, req.APISecretKey, false)
 }
