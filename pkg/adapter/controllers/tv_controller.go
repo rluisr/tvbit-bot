@@ -19,7 +19,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package controllers
 
 import (
-	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/rluisr/tvbit-bot/pkg/adapter/gateway"
 	"github.com/rluisr/tvbit-bot/pkg/domain"
@@ -48,7 +47,7 @@ func (controller *TVController) Handle(c *gin.Context) {
 	var req domain.TV
 	err := c.ShouldBindJSON(&req)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, fmt.Sprintf("bind error: %s", err.Error()))
+		c.JSON(http.StatusInternalServerError, NewError(http.StatusBadRequest, err))
 		return
 	}
 
@@ -56,7 +55,7 @@ func (controller *TVController) Handle(c *gin.Context) {
 
 	order, err := controller.Interactor.CreateOrder(req, bybitClient)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, NewError(http.StatusInternalServerError, err.Error()))
+		c.JSON(http.StatusInternalServerError, NewError(http.StatusInternalServerError, err))
 		return
 	}
 
