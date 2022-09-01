@@ -1,7 +1,6 @@
 package gateway
 
 import (
-	"encoding/json"
 	"fmt"
 	"math"
 	"net/http"
@@ -91,34 +90,25 @@ func (r *BybitRepository) GetCurrentPrice(symbol string) (float64, error) {
 		tickersURL = fmt.Sprintf("derivatives/v3/public/tickers?category=linear&symbol=%s", symbol)
 	}
 
-	_, resp, err := r.Client.PublicRequest(http.MethodGet, tickersURL, nil, nil)
-	if err != nil {
-		return 0, fmt.Errorf("PublicRequest err: %w, body: %s", err, string(resp))
-	}
-
-	var markPrice float64
+	var markPriceStr string
 
 	if !isPerp {
 		var ticker domain.DerivTicker
-		err = json.Unmarshal(resp, &ticker)
+		_, resp, err := r.Client.PublicRequest(http.MethodGet, tickersURL, nil, &ticker)
 		if err != nil {
-			return 0, err
+			return 0, fmt.Errorf("PublicRequest err: %w, body: %s", err, string(resp))
 		}
-
-		markPriceStr := ticker.Result.List[0].MarkPrice
-		markPrice, err = strconv.ParseFloat(markPriceStr, 64)
+		markPriceStr = ticker.Result.List[0].MarkPrice
 	} else {
 		var ticker domain.PerpTicker
-		err = json.Unmarshal(resp, &ticker)
+		_, resp, err := r.Client.PublicRequest(http.MethodGet, tickersURL, nil, &ticker)
 		if err != nil {
-			return 0, err
+			return 0, fmt.Errorf("PublicRequest err: %w, body: %s", err, string(resp))
 		}
-
-		markPriceStr := ticker.Result.MarkPrice
-		markPrice, err = strconv.ParseFloat(markPriceStr, 64)
+		markPriceStr = ticker.Result.MarkPrice
 	}
 
-	return markPrice, err
+	return strconv.ParseFloat(markPriceStr, 64)
 }
 
 func (r *BybitRepository) CalculateTPSL(req domain.TV, value interface{}, isType string) (float64, error) {
