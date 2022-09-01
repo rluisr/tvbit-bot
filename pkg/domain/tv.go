@@ -19,7 +19,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package domain
 
 import (
-	"github.com/frankrap/bybit-api/rest"
 	"gorm.io/gorm"
 )
 
@@ -50,7 +49,7 @@ func (TVOrder) TableName() string {
 }
 
 type TVOrderResponse struct {
-	Success bool        `json:"successful" binding:"required"`
-	Reason  string      `json:"reason,omitempty" binding:"required"`
-	Order   *rest.Order `json:"order"`
+	Success bool     `json:"successful" binding:"required"`
+	Reason  string   `json:"reason,omitempty" binding:"required"`
+	Order   *TVOrder `json:"order"`
 }

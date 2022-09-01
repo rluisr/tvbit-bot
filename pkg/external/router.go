@@ -20,13 +20,14 @@ package external
 
 import (
 	"context"
-	"github.com/gin-gonic/gin"
-	"github.com/rluisr/tvbit-bot/pkg/external/mysql"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
 	"time"
+
+	"github.com/gin-gonic/gin"
+	"github.com/rluisr/tvbit-bot/pkg/external/mysql"
 
 	"github.com/rluisr/tvbit-bot/pkg/adapter/controllers"
 )
@@ -42,8 +43,7 @@ func init() {
 	Router = gin.Default()
 	Router.ForwardedByClientIP = true
 
-	httpClient := NewHTTPClient()
-	tvController := controllers.NewTVController(rwDB, roDB, httpClient)
+	tvController := controllers.NewTVController(rwDB, roDB)
 	settingController := controllers.NewSettingController(rwDB, roDB)
 
 	Router.GET("/", func(c *gin.Context) {

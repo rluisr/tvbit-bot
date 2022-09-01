@@ -19,6 +19,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package bybit
 
 import (
+	"net"
+	"net/http"
+	"time"
+
 	"github.com/frankrap/bybit-api/rest"
 	"github.com/rluisr/tvbit-bot/pkg/domain"
 )
@@ -30,5 +34,21 @@ func Init(req domain.TV) *rest.ByBit {
 		BaseURL = "https://api-testnet.bybit.com/"
 	}
 
-	return rest.New(nil, BaseURL, req.APIKey, req.APISecretKey, false)
+	httpClient := &http.Client{
+		Transport: &http.Transport{
+			DialContext: (&net.Dialer{
+				Timeout:   30 * time.Second,
+				KeepAlive: 30 * time.Second,
+			}).DialContext,
+			MaxIdleConns:          128,
+			MaxIdleConnsPerHost:   100,
+			IdleConnTimeout:       90 * time.Second,
+			TLSHandshakeTimeout:   10 * time.Second,
+			ResponseHeaderTimeout: 10 * time.Second,
+			ExpectContinueTimeout: 1 * time.Second,
+		},
+		Timeout: 60 * time.Second,
+	}
+
+	return rest.New(httpClient, BaseURL, req.APIKey, req.APISecretKey, false)
 }

@@ -19,20 +19,21 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package usecase
 
 import (
-	"github.com/frankrap/bybit-api/rest"
+	"log"
+
 	"github.com/rluisr/tvbit-bot/pkg/domain"
 	"github.com/rluisr/tvbit-bot/pkg/usecase/interfaces"
-	"log"
 )
 
 type TVInteractor struct {
-	TVRepository interfaces.TVRepository
+	TVRepository    interfaces.TVRepository
+	BybitRepository interfaces.BybitRepository
 }
 
-func (i *TVInteractor) CreateOrder(req domain.TV, bybitClient *rest.ByBit) (domain.TVOrderResponse, error) {
+func (i *TVInteractor) CreateOrder(req domain.TV) (domain.TVOrderResponse, error) {
 	var err error
 
-	req.Order.TP, err = i.TVRepository.CalculateTPSL(req, req.Order.TP, "TP")
+	req.Order.TP, err = i.BybitRepository.CalculateTPSL(req, req.Order.TP, "TP")
 	if err != nil {
 		return domain.TVOrderResponse{
 			Success: false,
@@ -41,7 +42,7 @@ func (i *TVInteractor) CreateOrder(req domain.TV, bybitClient *rest.ByBit) (doma
 		}, err
 	}
 
-	req.Order.SL, err = i.TVRepository.CalculateTPSL(req, req.Order.SL, "SL")
+	req.Order.SL, err = i.BybitRepository.CalculateTPSL(req, req.Order.SL, "SL")
 	if err != nil {
 		return domain.TVOrderResponse{
 			Success: false,
@@ -50,7 +51,23 @@ func (i *TVInteractor) CreateOrder(req domain.TV, bybitClient *rest.ByBit) (doma
 		}, err
 	}
 
-	order, err := i.TVRepository.CreateOrder(req, bybitClient)
+	isOK, err := i.TVRepository.IsOK(req)
+	if err != nil {
+		return domain.TVOrderResponse{
+			Success: false,
+			Reason:  err.Error(),
+			Order:   nil,
+		}, err
+	}
+	if !isOK {
+		return domain.TVOrderResponse{
+			Success: false,
+			Reason:  err.Error(),
+			Order:   nil,
+		}, nil
+	}
+
+	order, err := i.BybitRepository.CreateOrder(req)
 	if err != nil {
 		return domain.TVOrderResponse{
 			Success: false,
@@ -63,7 +80,7 @@ func (i *TVInteractor) CreateOrder(req domain.TV, bybitClient *rest.ByBit) (doma
 		return domain.TVOrderResponse{Success: true, Reason: "order is cancelled by \"start_time\", \"stop_time\" setting", Order: nil}, nil
 	}
 
-	err = i.TVRepository.SaveOrder(req, order)
+	err = i.TVRepository.SaveOrder(order)
 	if err != nil {
 		// order is created, do not return err here.
 		log.Printf("a order is created but failed to save order history to MySQL err: %s\n", err.Error())

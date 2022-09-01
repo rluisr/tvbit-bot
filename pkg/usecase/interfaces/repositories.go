@@ -19,13 +19,18 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package interfaces
 
 import (
-	"github.com/frankrap/bybit-api/rest"
 	"github.com/rluisr/tvbit-bot/pkg/domain"
 )
 
 type TVRepository interface {
-	CreateOrder(domain.TV, *rest.ByBit) (*rest.Order, error)
-	SaveOrder(domain.TV, *rest.Order) error
+	IsOK(domain.TV) (bool, error)
+	SaveOrder(*domain.TVOrder) error
+}
+
+type BybitRepository interface {
+	Set(domain.TV)
+	CreateOrder(domain.TV) (*domain.TVOrder, error)
+	GetCurrentPrice(string) (float64, error)
 	CalculateTPSL(domain.TV, interface{}, string) (float64, error)
 }
 

@@ -19,26 +19,28 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package controllers
 
 import (
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 	"github.com/rluisr/tvbit-bot/pkg/adapter/gateway"
 	"github.com/rluisr/tvbit-bot/pkg/domain"
-	"github.com/rluisr/tvbit-bot/pkg/external/bybit"
 	"github.com/rluisr/tvbit-bot/pkg/usecase"
 	"gorm.io/gorm"
-	"net/http"
 )
 
 type TVController struct {
 	Interactor usecase.TVInteractor
 }
 
-func NewTVController(rwDB, roDB *gorm.DB, httpClient *http.Client) *TVController {
+func NewTVController(rwDB, roDB *gorm.DB) *TVController {
 	return &TVController{
 		Interactor: usecase.TVInteractor{
 			TVRepository: &gateway.TVRepository{
-				RWDB:       rwDB,
-				RODB:       roDB,
-				HTTPClient: httpClient,
+				RWDB: rwDB,
+				RODB: roDB,
+			},
+			BybitRepository: &gateway.BybitRepository{
+				Client: nil,
 			},
 		},
 	}
@@ -52,9 +54,12 @@ func (controller *TVController) Handle(c *gin.Context) {
 		return
 	}
 
-	bybitClient := bybit.Init(req)
+	// we will support any other DEX in the future.
+	if true {
+		controller.Interactor.BybitRepository.Set(req)
+	}
 
-	order, err := controller.Interactor.CreateOrder(req, bybitClient)
+	order, err := controller.Interactor.CreateOrder(req)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, NewError(http.StatusInternalServerError, err))
 		return
