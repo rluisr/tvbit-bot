@@ -2,13 +2,14 @@ package mysql
 
 import (
 	"fmt"
+	"log"
+	"os"
+	"time"
+
 	"github.com/rluisr/tvbit-bot/pkg/domain"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
-	"log"
-	"os"
-	"time"
 )
 
 var (
@@ -22,7 +23,7 @@ const (
 	DBMaxLifeTime = time.Second * 30
 )
 
-func Connect() (*gorm.DB, *gorm.DB) {
+func Connect() (*gorm.DB, *gorm.DB, error) {
 	config, err := NewConfig()
 	if err != nil {
 		panic(fmt.Errorf("mysql.NewConfig err: %w", err))
@@ -49,7 +50,7 @@ func Connect() (*gorm.DB, *gorm.DB) {
 		PrepareStmt:                              true,
 	})
 	if err != nil {
-		panic(fmt.Errorf("mysql rw: %s", err))
+		return nil, nil, err
 	}
 
 	rwSQL, err := rwDB.DB()
@@ -61,11 +62,11 @@ func Connect() (*gorm.DB, *gorm.DB) {
 	rwSQL.SetConnMaxLifetime(DBMaxLifeTime)
 	err = rwSQL.Ping()
 	if err != nil {
-		panic(fmt.Errorf("mysql rw: %s", err))
+		return nil, nil, err
 	}
-	err = rwDB.AutoMigrate(&domain.Setting{}, &domain.TVOrder{})
+	err = rwDB.AutoMigrate(&domain.Setting{}, &domain.TVOrder{}, &domain.WalletHistory{})
 	if err != nil {
-		panic(fmt.Errorf("AutoMigrate failed err: %w", err))
+		return nil, nil, err
 	}
 
 	dsnRO := fmt.Sprintf("%s:%s@tcp(%s)/%s?charset=utf8mb4&parseTime=true&loc=Local&interpolateParams=true", config.MySQLUser, config.MySQLPass, config.MySQLHostRO, config.MySQLDBName)
@@ -75,7 +76,7 @@ func Connect() (*gorm.DB, *gorm.DB) {
 		PrepareStmt:                              true,
 	})
 	if err != nil {
-		panic(fmt.Errorf("mysql ro: %s", err))
+		return nil, nil, err
 	}
 
 	roSQL, err := roDB.DB()
@@ -87,10 +88,10 @@ func Connect() (*gorm.DB, *gorm.DB) {
 	roSQL.SetConnMaxLifetime(DBMaxLifeTime)
 	err = roSQL.Ping()
 	if err != nil {
-		panic(fmt.Errorf("mysql ro: %s", err))
+		return nil, nil, err
 	}
 
-	return rwDB, roDB
+	return rwDB, roDB, nil
 }
 
 func CloseConn() {

@@ -21,6 +21,7 @@ package gateway
 import (
 	"errors"
 	"fmt"
+
 	"github.com/rluisr/tvbit-bot/pkg/domain"
 	"gorm.io/gorm"
 )
@@ -34,6 +35,16 @@ type (
 
 func (r *SettingRepository) Get(setting domain.Setting) (domain.Setting, error) {
 	err := r.RODB.Where("api_key = ? AND api_secret_key = ?", setting.APIKey, setting.APISecretKey).Take(&setting).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return domain.Setting{}, fmt.Errorf("api_key and api_secret_key pair is not found. try PUT /setting")
+	}
+
+	return setting, err
+}
+
+func (r *SettingRepository) GetByID(id uint64) (domain.Setting, error) {
+	var setting domain.Setting
+	err := r.RODB.Where("id = ?", id).Take(&setting).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return domain.Setting{}, fmt.Errorf("api_key and api_secret_key pair is not found. try PUT /setting")
 	}

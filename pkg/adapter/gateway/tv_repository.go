@@ -37,7 +37,18 @@ type (
 	}
 )
 
-func (r *TVRepository) SaveOrder(order *domain.TVOrder) error {
+func (r *TVRepository) SaveOrder(req domain.TV, order *domain.TVOrder) error {
+	var setting domain.Setting
+	err := r.RODB.Where("api_key = ? AND api_secret_key = ?", req.APIKey, req.APISecretKey).First(&setting).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return fmt.Errorf("failed SaveOrder user is not found in setting table")
+		} else {
+			return err
+		}
+	}
+	order.DEX = "bybit" // TODO we should support any other DEX
+	order.SettingID = setting.ID
 	return r.RWDB.Save(order).Error
 }
 
@@ -84,4 +95,18 @@ func (r *TVRepository) IsOK(req domain.TV) (bool, error) {
 	}
 
 	return false, nil
+}
+
+func (r *TVRepository) GetSettings() ([]domain.Setting, error) {
+	var settings []domain.Setting
+	err := r.RODB.Find(&settings).Error
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, err
+	}
+
+	return settings, nil
+}
+
+func (r *TVRepository) SaveWalletHistories(histories []domain.WalletHistory) error {
+	return r.RWDB.Create(&histories).Error
 }

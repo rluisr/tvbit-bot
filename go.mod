@@ -4,8 +4,10 @@ go 1.19
 
 require (
 	github.com/Netflix/go-env v0.0.0-20210215222557-e437a7e7f9fb
+	github.com/adhocore/gronx v0.2.7
 	github.com/frankrap/bybit-api v1.0.8
 	github.com/gin-gonic/gin v1.8.1
+	github.com/shopspring/decimal v1.3.1
 	github.com/thrasher-corp/gocryptotrader v0.0.0-20220831004545-7b958d2c0584
 	gorm.io/driver/mysql v1.3.6
 	gorm.io/gorm v1.23.8

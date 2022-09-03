@@ -29,7 +29,7 @@ import (
 
 var BaseURL = "https://api.bybit.com/"
 
-func Init(req domain.TV) *rest.ByBit {
+func Init(req domain.TV) (*rest.ByBit, string) {
 	if req.IsTestNet {
 		BaseURL = "https://api-testnet.bybit.com/"
 	}
@@ -50,5 +50,5 @@ func Init(req domain.TV) *rest.ByBit {
 		Timeout: 60 * time.Second,
 	}
 
-	return rest.New(httpClient, BaseURL, req.APIKey, req.APISecretKey, false)
+	return rest.New(httpClient, BaseURL, req.APIKey, req.APISecretKey, false), BaseURL
 }

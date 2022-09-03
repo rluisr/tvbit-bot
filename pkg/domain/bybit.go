@@ -2,7 +2,7 @@ package domain
 
 import "time"
 
-type PerpResponseOrder struct {
+type BybitPerpResponseOrder struct {
 	RetCode int    `json:"retCode"`
 	RetMsg  string `json:"retMsg"`
 	Result  struct {
@@ -27,7 +27,7 @@ type PerpResponseOrder struct {
 	} `json:"result"`
 }
 
-type DerivTicker struct {
+type BybitDerivTicker struct {
 	RetCode int    `json:"retCode"`
 	RetMsg  string `json:"retMsg"`
 	Result  struct {
@@ -60,7 +60,7 @@ type DerivTicker struct {
 	Time       int64       `json:"time"`
 }
 
-type PerpTicker struct {
+type BybitPerpTicker struct {
 	RetCode int    `json:"retCode"`
 	RetMsg  string `json:"retMsg"`
 	Result  struct {
@@ -94,4 +94,21 @@ type PerpTicker struct {
 		Vega                   string    `json:"vega"`
 		Theta                  string    `json:"theta"`
 	} `json:"result"`
+}
+
+type BybitWallet struct {
+	Result struct {
+		WalletBalance    string `json:"walletBalance"`
+		AccountMM        string `json:"accountMM"`
+		Bonus            string `json:"bonus"`
+		AccountIM        string `json:"accountIM"`
+		TotalSessionRPL  string `json:"totalSessionRPL"`
+		Equity           string `json:"equity"`
+		TotalRPL         string `json:"totalRPL"`
+		MarginBalance    string `json:"marginBalance"`
+		AvailableBalance string `json:"availableBalance"`
+		TotalSessionUPL  string `json:"totalSessionUPL"`
+	} `json:"result"`
+	RetCode int    `json:"retCode"`
+	RetMsg  string `json:"retMsg"`
 }

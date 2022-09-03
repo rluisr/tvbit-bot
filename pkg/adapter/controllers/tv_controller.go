@@ -46,6 +46,10 @@ func NewTVController(rwDB, roDB *gorm.DB) *TVController {
 	}
 }
 
+func (controller *TVController) Bybit(req domain.TV) {
+	controller.Interactor.BybitRepository.Set(req)
+}
+
 func (controller *TVController) Handle(c *gin.Context) {
 	var req domain.TV
 	err := c.ShouldBindJSON(&req)
@@ -56,7 +60,7 @@ func (controller *TVController) Handle(c *gin.Context) {
 
 	// we will support any other DEX in the future.
 	if true {
-		controller.Interactor.BybitRepository.Set(req)
+		controller.Bybit(req)
 	}
 
 	order, err := controller.Interactor.CreateOrder(req)

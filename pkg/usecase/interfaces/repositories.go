@@ -24,7 +24,9 @@ import (
 
 type TVRepository interface {
 	IsOK(domain.TV) (bool, error)
-	SaveOrder(*domain.TVOrder) error
+	SaveOrder(domain.TV, *domain.TVOrder) error
+	GetSettings() ([]domain.Setting, error)
+	SaveWalletHistories([]domain.WalletHistory) error
 }
 
 type BybitRepository interface {
@@ -32,9 +34,11 @@ type BybitRepository interface {
 	CreateOrder(domain.TV) (*domain.TVOrder, error)
 	GetCurrentPrice(string) (float64, error)
 	CalculateTPSL(domain.TV, interface{}, string) (float64, error)
+	GetWalletInfoUSDC() (*domain.BybitWallet, error)
 }
 
 type SettingRepository interface {
 	Get(domain.Setting) (domain.Setting, error)
+	GetByID(uint64) (domain.Setting, error)
 	Set(domain.Setting) (domain.Setting, error)
 }

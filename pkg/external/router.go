@@ -27,26 +27,17 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/rluisr/tvbit-bot/pkg/external/mysql"
-
-	"github.com/rluisr/tvbit-bot/pkg/adapter/controllers"
 )
 
 var (
-	Router  *gin.Engine
 	version string
 )
 
-func init() {
-	rwDB, roDB := mysql.Connect()
+func Run() {
+	r := gin.Default()
+	r.ForwardedByClientIP = true
 
-	Router = gin.Default()
-	Router.ForwardedByClientIP = true
-
-	tvController := controllers.NewTVController(rwDB, roDB)
-	settingController := controllers.NewSettingController(rwDB, roDB)
-
-	Router.GET("/", func(c *gin.Context) {
+	r.GET("/", func(c *gin.Context) {
 		c.JSON(http.StatusOK, map[string]string{
 			"version": version,
 			"repo":    "https://github.com/rluisr/tvbit-bot",
@@ -54,17 +45,17 @@ func init() {
 		})
 	})
 
-	tv := Router.Group("/tv")
+	tv := r.Group("/tv")
 	tv.GET("", func(c *gin.Context) { c.Redirect(http.StatusPermanentRedirect, "/") })
 	tv.POST("", func(c *gin.Context) { tvController.Handle(c) })
 
-	setting := Router.Group("/setting")
+	setting := r.Group("/setting")
 	setting.GET("", func(c *gin.Context) { settingController.Get(c) })
 	setting.PUT("", func(c *gin.Context) { settingController.Set(c) })
 
 	var addr string
 	if os.Getenv("SERVER_ENV") == "local" {
-		Router.Use(gin.Logger())
+		r.Use(gin.Logger())
 		addr = ":3001"
 	} else {
 		addr = ":8082"
@@ -75,7 +66,7 @@ func init() {
 
 	srv := &http.Server{
 		Addr:    addr,
-		Handler: Router,
+		Handler: r,
 	}
 
 	go func() {

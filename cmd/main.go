@@ -20,6 +20,7 @@ package main
 
 import (
 	"fmt"
+
 	"github.com/rluisr/tvbit-bot/pkg/external"
 	"github.com/rluisr/tvbit-bot/pkg/external/mysql"
 )
@@ -27,8 +28,10 @@ import (
 func main() {
 	defer mysql.CloseConn()
 
-	err := external.Router.Run()
+	err := external.Init()
 	if err != nil {
-		panic(fmt.Errorf("failed to run router %w", err))
+		panic(fmt.Errorf("failed to initialization %w", err))
 	}
+
+	external.Run()
 }
