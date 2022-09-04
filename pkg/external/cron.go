@@ -35,7 +35,7 @@ func cron() {
 		Verbose: true,
 	})
 
-	task.Task("0 * * * *", func(ctx context.Context) (int, error) {
+	task.Task("* * * * *", func(ctx context.Context) (int, error) {
 		settings, err := tvController.Interactor.TVRepository.GetSettings()
 		if err != nil {
 			return 0, err
@@ -53,16 +53,16 @@ func cron() {
 				})
 
 				// USDC
-				bybitWallet, err := tvController.Interactor.BybitRepository.GetWalletInfoUSDC()
+				bybitUSDCWallet, err := tvController.Interactor.BybitRepository.GetWalletInfoUSDC()
 				if err != nil {
 					return 1, err
 				}
 
-				balance, err := decimal.NewFromString(bybitWallet.Result.WalletBalance)
+				balance, err := decimal.NewFromString(bybitUSDCWallet.Result.WalletBalance)
 				if err != nil {
 					return 1, err
 				}
-				totalRPL, err := decimal.NewFromString(bybitWallet.Result.TotalRPL)
+				totalRPL, err := decimal.NewFromString(bybitUSDCWallet.Result.TotalRPL)
 				if err != nil {
 					return 1, err
 				}
@@ -73,8 +73,22 @@ func cron() {
 					Balance:   balance,
 					TotalRPL:  totalRPL,
 				})
-				// TODO spot
-				// TODO futures
+
+				// Deriv USDT
+				bybitDerivWallet, err := tvController.Interactor.BybitRepository.GetWalletInfoDeriv()
+				if err != nil {
+					return 1, err
+				}
+
+				balance = decimal.NewFromFloat(bybitDerivWallet.Equity)
+				totalRPL = decimal.NewFromFloat(bybitDerivWallet.CumRealisedPnl)
+
+				walletHistories = append(walletHistories, domain.WalletHistory{
+					SettingID: setting.ID,
+					Type:      "usdt",
+					Balance:   balance,
+					TotalRPL:  totalRPL,
+				})
 			}
 		}
 

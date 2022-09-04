@@ -19,6 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package domain
 
 import (
+	"github.com/shopspring/decimal"
 	"gorm.io/gorm"
 )
 
@@ -31,16 +32,17 @@ type TV struct {
 
 type TVOrder struct {
 	gorm.Model
-	DEX       string      `gorm:"type:varchar(255);not null" json:"-"`
-	SettingID uint64      `gorm:"type:uint;not null" json:"-"`
-	OrderID   string      `gorm:"type:varchar(255);uniqueIndex:order_id;not null"`
-	Type      string      `gorm:"type:varchar(255)" json:"type" binding:"required"`   // "Market" or "Limit"
-	Symbol    string      `gorm:"type:varchar(255)" json:"symbol" binding:"required"` // eg: BTCUSDT
-	Side      string      `gorm:"type:varchar(255)" json:"side" binding:"required"`   // "Buy" or "Sell"
-	Price     float64     `gorm:"type:float" json:"price"`                            // Set 0 if order_type is Market
-	QTY       float64     `gorm:"type:float" json:"qty" binding:"required"`
-	TP        interface{} `gorm:"type:float" json:"tp"`
-	SL        interface{} `gorm:"type:float" json:"sl"`
+	DEX        string          `gorm:"type:varchar(255);not null" json:"-"`
+	SettingID  uint64          `gorm:"type:uint;not null" json:"-"`
+	OrderID    string          `gorm:"type:varchar(255);uniqueIndex:order_id;not null"`
+	Type       string          `gorm:"type:varchar(255)" json:"type" binding:"required"`   // "Market" or "Limit"
+	Symbol     string          `gorm:"type:varchar(255)" json:"symbol" binding:"required"` // eg: BTCUSDT
+	Side       string          `gorm:"type:varchar(255)" json:"side" binding:"required"`   // "Buy" or "Sell"
+	Price      float64         `gorm:"-" json:"price"`                                     // Set 0 if order_type is Market
+	EntryPrice decimal.Decimal `gorm:"type:decimal(10,4)" json:"-"`
+	QTY        float64         `gorm:"type:float" json:"qty" binding:"required"`
+	TP         interface{}     `gorm:"type:float" json:"tp"`
+	SL         interface{}     `gorm:"type:float" json:"sl"`
 }
 
 type Tabler interface {

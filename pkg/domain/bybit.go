@@ -96,6 +96,44 @@ type BybitPerpTicker struct {
 	} `json:"result"`
 }
 
+type BybitUSDCPositions struct {
+	Result struct {
+		Cursor          string `json:"cursor"`
+		ResultTotalSize int    `json:"resultTotalSize"`
+		DataList        []struct {
+			Symbol              string `json:"symbol"`
+			Leverage            string `json:"leverage"`
+			OccClosingFee       string `json:"occClosingFee"`
+			LiqPrice            string `json:"liqPrice"`
+			PositionValue       string `json:"positionValue"`
+			TakeProfit          string `json:"takeProfit"`
+			RiskID              string `json:"riskId"`
+			TrailingStop        string `json:"trailingStop"`
+			UnrealisedPnl       string `json:"unrealisedPnl"`
+			CreatedAt           string `json:"createdAt"`
+			MarkPrice           string `json:"markPrice"`
+			CumRealisedPnl      string `json:"cumRealisedPnl"`
+			PositionMM          string `json:"positionMM"`
+			PositionIM          string `json:"positionIM"`
+			UpdatedAt           string `json:"updatedAt"`
+			TpSLMode            string `json:"tpSLMode"`
+			Side                string `json:"side"`
+			BustPrice           string `json:"bustPrice"`
+			DeleverageIndicator int    `json:"deleverageIndicator"`
+			EntryPrice          string `json:"entryPrice"`
+			Size                string `json:"size"`
+			SessionRPL          string `json:"sessionRPL"`
+			PositionStatus      string `json:"positionStatus"`
+			SessionUPL          string `json:"sessionUPL"`
+			StopLoss            string `json:"stopLoss"`
+			OrderMargin         string `json:"orderMargin"`
+			SessionAvgPrice     string `json:"sessionAvgPrice"`
+		} `json:"dataList"`
+	} `json:"result"`
+	RetCode int    `json:"retCode"`
+	RetMsg  string `json:"retMsg"`
+}
+
 type BybitWallet struct {
 	Result struct {
 		WalletBalance    string `json:"walletBalance"`

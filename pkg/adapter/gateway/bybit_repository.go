@@ -10,6 +10,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/shopspring/decimal"
+
 	"github.com/frankrap/bybit-api/rest"
 	"github.com/rluisr/tvbit-bot/pkg/domain"
 	"github.com/rluisr/tvbit-bot/pkg/external/bybit"
@@ -31,89 +33,56 @@ func (r *BybitRepository) Set(req domain.TV) {
 	r.APISecretKey = req.APISecretKey
 }
 
-func (r *BybitRepository) CreateOrder(req domain.TV) (*domain.TVOrder, error) {
-	orderHistory := &domain.TVOrder{
-		Type:   req.Order.Type,
-		Symbol: req.Order.Symbol,
-		Side:   req.Order.Side,
-		QTY:    req.Order.QTY,
-		TP:     req.Order.TP,
-		SL:     req.Order.SL,
-	}
+func (r *BybitRepository) CreateOrder(req domain.TV) (string, error) {
+	var orderID string
 
-	if !strings.Contains(req.Order.Symbol, "PERP") {
+	if strings.Contains(req.Order.Symbol, "PERP") {
+		params := map[string]interface{}{}
+		params["symbol"] = req.Order.Symbol
+		params["orderType"] = req.Order.Type
+		params["orderFilter"] = "Order"
+		params["orderQty"] = req.Order.QTY
+		params["side"] = req.Order.Side
+		params["timeInForce"] = "ImmediateOrCancel"
+		params["takeProfit"] = strconv.FormatFloat(req.Order.TP.(float64), 'f', -1, 64)
+		params["stopLoss"] = strconv.FormatFloat(req.Order.SL.(float64), 'f', -1, 64)
+
+		var order domain.BybitPerpResponseOrder
+		_, resp, err := r.Client.SignedRequest(http.MethodPost, "perpetual/usdc/openapi/private/v1/place-order", params, &order)
+		if err != nil {
+			return "", fmt.Errorf("SignedRequest err: %w, body: %s", err, string(resp))
+		}
+		orderID = order.Result.OrderID
+	} else {
 		_, _, order, err := r.Client.LinearCreateOrder(req.Order.Side, req.Order.Type, req.Order.Price, req.Order.QTY, "ImmediateOrCancel", req.Order.TP.(float64), req.Order.SL.(float64), false, false, "", req.Order.Symbol)
 		if err != nil {
-			return nil, err
+			return "", err
 		}
-
-		entryPrice, err := order.Price.Float64()
-		if err != nil {
-			return nil, err
-		}
-		orderHistory.OrderID = order.OrderId
-		orderHistory.Price = entryPrice
-		return orderHistory, nil
+		orderID = order.OrderId
 	}
 
-	params := map[string]interface{}{}
-	params["symbol"] = req.Order.Symbol
-	params["orderType"] = req.Order.Type
-	params["orderFilter"] = "Order"
-	params["orderQty"] = req.Order.QTY
-	params["side"] = req.Order.Side
-	params["timeInForce"] = "ImmediateOrCancel"
-	params["takeProfit"] = strconv.FormatFloat(req.Order.TP.(float64), 'f', -1, 64)
-	params["stopLoss"] = strconv.FormatFloat(req.Order.SL.(float64), 'f', -1, 64)
-
-	var order domain.BybitPerpResponseOrder
-	_, resp, err := r.Client.SignedRequest(http.MethodPost, "perpetual/usdc/openapi/private/v1/place-order", params, &order)
-	if err != nil {
-		return nil, fmt.Errorf("SignedRequest err: %w, body: %s", err, string(resp))
-	}
-
-	orderPrice, err := strconv.ParseFloat(order.Result.OrderPrice, 64)
-	if err != nil {
-		// bybit returns fucking error response sometimes but order is success.
-		return nil, err
-	}
-	orderHistory.OrderID = order.Result.OrderID
-	orderHistory.Price = orderPrice
-
-	return orderHistory, nil
+	return orderID, nil
 }
 
-// GetCurrentPrice returns mark price
-func (r *BybitRepository) GetCurrentPrice(symbol string) (float64, error) {
-	var isPerp bool
-
-	var tickersURL string
-	if strings.Contains(symbol, "PERP") {
-		isPerp = true
-		tickersURL = fmt.Sprintf("perpetual/usdc/openapi/public/v1/tick?symbol=%s", symbol)
-	} else {
-		tickersURL = fmt.Sprintf("derivatives/v3/public/tickers?category=linear&symbol=%s", symbol)
+// FetchOrder is set entry price
+func (r *BybitRepository) FetchOrder(req *domain.TV, orderID string) error {
+	req.Order = domain.TVOrder{
+		OrderID: orderID,
+		Type:    req.Order.Type,
+		Symbol:  req.Order.Symbol,
+		Side:    req.Order.Side,
+		QTY:     req.Order.QTY,
+		TP:      req.Order.TP,
+		SL:      req.Order.SL,
 	}
 
-	var markPriceStr string
-
-	if !isPerp {
-		var ticker domain.BybitDerivTicker
-		_, resp, err := r.Client.PublicRequest(http.MethodGet, tickersURL, nil, &ticker)
-		if err != nil {
-			return 0, fmt.Errorf("PublicRequest err: %w, body: %s", err, string(resp))
-		}
-		markPriceStr = ticker.Result.List[0].MarkPrice
-	} else {
-		var ticker domain.BybitPerpTicker
-		_, resp, err := r.Client.PublicRequest(http.MethodGet, tickersURL, nil, &ticker)
-		if err != nil {
-			return 0, fmt.Errorf("PublicRequest err: %w, body: %s", err, string(resp))
-		}
-		markPriceStr = ticker.Result.MarkPrice
+	entryPrice, err := r.getEntryPrice(req.Order.Symbol, req.Order.Side)
+	if err != nil {
+		return err
 	}
+	req.Order.EntryPrice = *entryPrice
 
-	return strconv.ParseFloat(markPriceStr, 64)
+	return nil
 }
 
 func (r *BybitRepository) CalculateTPSL(req domain.TV, value interface{}, isType string) (float64, error) {
@@ -128,7 +97,7 @@ func (r *BybitRepository) CalculateTPSL(req domain.TV, value interface{}, isType
 		return 0, nil
 	}
 
-	currentPrice, err := r.GetCurrentPrice(req.Order.Symbol)
+	currentPrice, err := r.getMarkPrice(req.Order.Symbol)
 	if err != nil {
 		return 0, err
 	}
@@ -196,22 +165,107 @@ func (r *BybitRepository) CalculateTPSL(req domain.TV, value interface{}, isType
 	return f64, nil
 }
 
+// getMarkPrice returns mark price
+func (r *BybitRepository) getMarkPrice(symbol string) (float64, error) {
+	var isPerp bool
+
+	var tickersURL string
+	if strings.Contains(symbol, "PERP") {
+		isPerp = true
+		tickersURL = fmt.Sprintf("perpetual/usdc/openapi/public/v1/tick?symbol=%s", symbol)
+	} else {
+		tickersURL = fmt.Sprintf("derivatives/v3/public/tickers?category=linear&symbol=%s", symbol)
+	}
+
+	var markPriceStr string
+
+	if !isPerp {
+		var ticker domain.BybitDerivTicker
+		_, resp, err := r.Client.PublicRequest(http.MethodGet, tickersURL, nil, &ticker)
+		if err != nil {
+			return 0, fmt.Errorf("PublicRequest err: %w, body: %s", err, string(resp))
+		}
+		markPriceStr = ticker.Result.List[0].MarkPrice
+	} else {
+		var ticker domain.BybitPerpTicker
+		_, resp, err := r.Client.PublicRequest(http.MethodGet, tickersURL, nil, &ticker)
+		if err != nil {
+			return 0, fmt.Errorf("PublicRequest err: %w, body: %s", err, string(resp))
+		}
+		markPriceStr = ticker.Result.MarkPrice
+	}
+
+	return strconv.ParseFloat(markPriceStr, 64)
+}
+
+func (r *BybitRepository) getEntryPrice(symbol, side string) (*decimal.Decimal, error) {
+	var entryPrice decimal.Decimal
+	var err error
+
+	if strings.Contains(symbol, "PERP") {
+		var positions domain.BybitUSDCPositions
+
+		resp, err := r.signedRequestWithHeader(http.MethodPost, "option/usdc/openapi/private/v1/query-position", []byte("{\"category\":\"PERPETUAL\"}"), &positions)
+		if err != nil {
+			return nil, fmt.Errorf("signedRequest err: %w, body: %s", err, resp)
+		}
+
+		for _, position := range positions.Result.DataList {
+			fmt.Printf("%+v\n", position)
+			entryPrice, err = decimal.NewFromString(position.EntryPrice)
+			if err != nil {
+				return nil, err
+			}
+		}
+	} else {
+		_, _, positions, err := r.Client.LinearGetPosition(symbol)
+		if err != nil {
+			return nil, err
+		}
+
+		for _, position := range positions {
+			if position.Side == side {
+				entryPrice = decimal.NewFromFloat(position.EntryPrice)
+			}
+		}
+	}
+
+	return &entryPrice, err
+}
+
 func (r *BybitRepository) GetWalletInfoUSDC() (*domain.BybitWallet, error) {
 	var wallet domain.BybitWallet
 
-	resp, err := r.signedRequestWithHeaderWithoutBody(http.MethodPost, "option/usdc/openapi/private/v1/query-wallet-balance", &wallet)
+	resp, err := r.signedRequestWithHeader(http.MethodPost, "option/usdc/openapi/private/v1/query-wallet-balance", []byte("{}"), &wallet)
 	if err != nil {
-		return nil, fmt.Errorf("signedRequestWithHeaderWithoutBody err: %w, body: %s", err, string(resp))
+		return nil, fmt.Errorf("signedRequest err: %w, body: %s", err, resp)
 	}
 
 	return &wallet, nil
 }
 
-func (r *BybitRepository) signedRequestWithHeaderWithoutBody(method, path string, result interface{}) (string, error) {
+func (r *BybitRepository) GetWalletInfoDeriv() (*rest.Balance, error) {
+	_, _, wallet, err := r.Client.GetWalletBalance("USDT")
+	if err != nil {
+		return nil, err
+	}
+
+	return &wallet, nil
+}
+
+func (r *BybitRepository) signedRequestWithHeader(method, path string, body []byte, result interface{}) (string, error) {
+	var payload io.Reader
+
 	nowTimeInMilli := strconv.FormatInt(time.Now().UnixMilli(), 10)
-	var hmacSigned []byte
-	payload := strings.NewReader(`{}`)
-	signInput := nowTimeInMilli + r.APIKey + "5000" + "{}"
+
+	if body == nil {
+		// TODO have to using query params. it's not working when query params are passed.
+		payload = strings.NewReader("")
+	} else {
+		payload = strings.NewReader(string(body))
+	}
+
+	signInput := nowTimeInMilli + r.APIKey + "5000" + string(body)
 	hmacSigned, err := crypto.GetHMAC(crypto.HashSHA256, []byte(signInput), []byte(r.APISecretKey))
 	if err != nil {
 		return "", err

@@ -142,9 +142,10 @@ Twitter [@rarirureluis](https://twitter.com/rarirureluis)
 TODO
 -----
 
-- [x] [core/bybit] USDC/Perp
-- [x] [core/bybit] USDT/Deriv
-- [x] [cron/wallet/bybit] USDC
-- [ ] [cron/wallet/bybit] Spot
-- [ ] [cron/wallet/bybit] Futures
+**There are no plans to support bybit/options/spot trading and other DEX.**
+
+- [x] [bybit/core] Futures
+- [x] [bybit/core] USDC
+- [x] [bybit/wallet] Deriv
+- [x] [bybit/wallet] USDC
 - [ ] [core/binance]

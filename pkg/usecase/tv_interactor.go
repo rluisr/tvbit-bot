@@ -19,7 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package usecase
 
 import (
-	"log"
+	"time"
 
 	"github.com/rluisr/tvbit-bot/pkg/domain"
 	"github.com/rluisr/tvbit-bot/pkg/usecase/interfaces"
@@ -67,7 +67,7 @@ func (i *TVInteractor) CreateOrder(req domain.TV) (domain.TVOrderResponse, error
 		}, nil
 	}
 
-	order, err := i.BybitRepository.CreateOrder(req)
+	orderID, err := i.BybitRepository.CreateOrder(req)
 	if err != nil {
 		return domain.TVOrderResponse{
 			Success: false,
@@ -76,15 +76,26 @@ func (i *TVInteractor) CreateOrder(req domain.TV) (domain.TVOrderResponse, error
 		}, err
 	}
 
-	if order == nil {
-		return domain.TVOrderResponse{Success: true, Reason: "order is cancelled by \"start_time\", \"stop_time\" setting", Order: nil}, nil
-	}
+	// Wait for ByBit server side reflection
+	time.Sleep(5 * time.Second)
 
-	err = i.TVRepository.SaveOrder(req, order)
+	err = i.BybitRepository.FetchOrder(&req, orderID)
 	if err != nil {
-		// order is created, do not return err here.
-		log.Printf("a order is created but failed to save order history to MySQL err: %s\n", err.Error())
+		return domain.TVOrderResponse{
+			Success: false,
+			Reason:  err.Error(),
+			Order:   &req.Order,
+		}, err
 	}
 
-	return domain.TVOrderResponse{Success: true, Order: order}, nil
+	err = i.TVRepository.SaveOrder(req, &req.Order)
+	if err != nil {
+		return domain.TVOrderResponse{
+			Success: false,
+			Reason:  err.Error(),
+			Order:   &req.Order,
+		}, err
+	}
+
+	return domain.TVOrderResponse{Success: true, Order: &req.Order}, nil
 }
