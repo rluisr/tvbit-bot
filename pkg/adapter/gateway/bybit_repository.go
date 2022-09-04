@@ -23,12 +23,13 @@ type (
 		BaseURL      string
 		APIKey       string
 		APISecretKey string
+		HTTPClient   *http.Client
 		Client       *rest.ByBit
 	}
 )
 
 func (r *BybitRepository) Set(req domain.TV) {
-	r.Client, r.BaseURL = bybit.Init(req)
+	r.Client, r.BaseURL = bybit.Init(req, r.HTTPClient)
 	r.APIKey = req.APIKey
 	r.APISecretKey = req.APISecretKey
 }
@@ -273,7 +274,6 @@ func (r *BybitRepository) signedRequestWithHeader(method, path string, body []by
 
 	url := fmt.Sprintf("%s%s", r.BaseURL, path)
 
-	client := &http.Client{}
 	req, _ := http.NewRequest(method, url, payload)
 	req.Header.Add("X-BAPI-API-KEY", r.APIKey)
 	req.Header.Add("X-BAPI-SIGN", crypto.HexEncodeToString(hmacSigned))
@@ -281,7 +281,7 @@ func (r *BybitRepository) signedRequestWithHeader(method, path string, body []by
 	req.Header.Add("X-BAPI-TIMESTAMP", nowTimeInMilli)
 	req.Header.Add("X-BAPI-RECV-WINDOW", "5000")
 
-	resp, err := client.Do(req)
+	resp, err := r.HTTPClient.Do(req)
 	if err != nil {
 		return "", err
 	}

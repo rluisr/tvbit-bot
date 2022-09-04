@@ -35,7 +35,7 @@ func cron() {
 		Verbose: true,
 	})
 
-	task.Task("* * * * *", func(ctx context.Context) (int, error) {
+	task.Task("0 * * * *", func(ctx context.Context) (int, error) {
 		settings, err := tvController.Interactor.TVRepository.GetSettings()
 		if err != nil {
 			return 0, err
@@ -79,15 +79,11 @@ func cron() {
 				if err != nil {
 					return 1, err
 				}
-
-				balance = decimal.NewFromFloat(bybitDerivWallet.Equity)
-				totalRPL = decimal.NewFromFloat(bybitDerivWallet.CumRealisedPnl)
-
 				walletHistories = append(walletHistories, domain.WalletHistory{
 					SettingID: setting.ID,
 					Type:      "usdt",
-					Balance:   balance,
-					TotalRPL:  totalRPL,
+					Balance:   decimal.NewFromFloat(bybitDerivWallet.Equity),
+					TotalRPL:  decimal.NewFromFloat(bybitDerivWallet.CumRealisedPnl),
 				})
 			}
 		}
