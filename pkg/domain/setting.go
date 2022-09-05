@@ -21,11 +21,10 @@ package domain
 import "database/sql"
 
 type Setting struct {
-	ID           uint64         `gorm:"primaryKey,autoIncrement"`
-	IsTestnet    bool           `gorm:"type:tinyint(2);not null" json:"is_testnet" binding:"required"`
-	APIKey       string         `gorm:"type:varchar(255);unique;index:idx_api" json:"api_key" binding:"required"`
-	APISecretKey string         `gorm:"type:varchar(255);unique;index:idx_api" json:"api_secret_key" binding:"required"`
-	DEX          string         `gorm:"type:varchar(255); not null" json:"dex"`
-	StartTime    sql.NullString `gorm:"type:char(5);default:null" json:"start_time"` // eg "09:00"
-	StopTime     sql.NullString `gorm:"type:char(5);default:null" json:"stop_time"`  // eg "21:00"
+	ID           uint64        `gorm:"primaryKey,autoIncrement"`
+	IsTestnet    bool          `gorm:"type:tinyint(2);not null" json:"is_testnet" binding:"required"`
+	APIKey       string        `gorm:"type:varchar(255);unique;index:idx_api" json:"api_key" binding:"required"`
+	APISecretKey string        `gorm:"type:varchar(255);unique;index:idx_api" json:"api_secret_key" binding:"required"`
+	DEX          string        `gorm:"type:varchar(255); not null" json:"dex"`
+	MaxPosition  sql.NullInt32 `gorm:"type:tinyint unsigned; default:null" json:"max_position"`
 }

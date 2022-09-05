@@ -7,8 +7,10 @@ require (
 	github.com/adhocore/gronx v0.2.7
 	github.com/frankrap/bybit-api v1.0.8
 	github.com/gin-gonic/gin v1.8.1
+	github.com/jinzhu/copier v0.3.5
 	github.com/shopspring/decimal v1.3.1
 	github.com/thrasher-corp/gocryptotrader v0.0.0-20220831004545-7b958d2c0584
+	golang.org/x/sync v0.0.0-20220819030929-7fc1605a5dde
 	gorm.io/driver/mysql v1.3.6
 	gorm.io/gorm v1.23.8
 )

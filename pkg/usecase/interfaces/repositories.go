@@ -24,8 +24,8 @@ import (
 )
 
 type TVRepository interface {
-	IsOK(domain.TV) (bool, error)
 	SaveOrder(domain.TV, *domain.TVOrder) error
+	GetSetting(apiKey, apiSecretKey string) (*domain.Setting, error)
 	GetSettings() ([]domain.Setting, error)
 	SaveWalletHistories([]domain.WalletHistory) error
 }
@@ -37,6 +37,8 @@ type BybitRepository interface {
 	FetchOrder(req *domain.TV, orderID string) error
 	GetWalletInfoUSDC() (*domain.BybitWallet, error)
 	GetWalletInfoDeriv() (*rest.Balance, error)
+	GetActiveOrderCount(req *domain.TV, positions *[]rest.LinearPosition) int
+	GetPositions(symbol string) (*[]rest.LinearPosition, error)
 }
 
 type SettingRepository interface {

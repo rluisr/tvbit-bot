@@ -10,11 +10,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/shopspring/decimal"
+	"github.com/jinzhu/copier"
 
 	"github.com/frankrap/bybit-api/rest"
 	"github.com/rluisr/tvbit-bot/pkg/domain"
 	"github.com/rluisr/tvbit-bot/pkg/external/bybit"
+	"github.com/shopspring/decimal"
 	"github.com/thrasher-corp/gocryptotrader/common/crypto"
 )
 
@@ -32,6 +33,32 @@ func (r *BybitRepository) Set(req domain.TV) {
 	r.Client, r.BaseURL = bybit.Init(req, r.HTTPClient)
 	r.APIKey = req.APIKey
 	r.APISecretKey = req.APISecretKey
+}
+
+// GetPositions return an array of positions.
+// This func uses deep copy if the symbol is PERP/USDC so return positions are not exactly but only used for GetActiveOrderCount
+func (r *BybitRepository) GetPositions(symbol string) (*[]rest.LinearPosition, error) {
+	var positions []rest.LinearPosition
+
+	if strings.Contains(symbol, "PERP") {
+		usdcPositions, err := r.getUSDCPosition()
+		if err != nil {
+			return nil, err
+		}
+
+		err = copier.Copy(&positions, &usdcPositions.Result.DataList)
+		if err != nil {
+			return nil, fmt.Errorf("GetPositions failed deep copy %w", err)
+		}
+	} else {
+		_, _, linearPositions, err := r.Client.LinearGetPosition(symbol)
+		if err != nil {
+			return nil, err
+		}
+		positions = linearPositions
+	}
+
+	return &positions, nil
 }
 
 func (r *BybitRepository) CreateOrder(req domain.TV) (string, error) {
@@ -77,13 +104,31 @@ func (r *BybitRepository) FetchOrder(req *domain.TV, orderID string) error {
 		SL:      req.Order.SL,
 	}
 
-	entryPrice, err := r.getEntryPrice(req.Order.Symbol, req.Order.Side)
+	entryPrice, err := r.getEntryPrice(req)
 	if err != nil {
 		return err
 	}
 	req.Order.EntryPrice = *entryPrice
 
 	return nil
+}
+
+func (r *BybitRepository) GetActiveOrderCount(req *domain.TV, positions *[]rest.LinearPosition) int {
+	var activeOrder int
+
+	if strings.Contains(req.Order.Symbol, "PERP") {
+		activeOrder = len(*positions)
+	} else {
+		for _, position := range *positions {
+			if position.Side == req.Order.Side {
+				if position.Size > 0 {
+					activeOrder = 1
+				}
+			}
+		}
+	}
+
+	return activeOrder
 }
 
 func (r *BybitRepository) CalculateTPSL(req domain.TV, value interface{}, isType string) (float64, error) {
@@ -199,11 +244,13 @@ func (r *BybitRepository) getMarkPrice(symbol string) (float64, error) {
 	return strconv.ParseFloat(markPriceStr, 64)
 }
 
-func (r *BybitRepository) getEntryPrice(symbol, side string) (*decimal.Decimal, error) {
-	var entryPrice decimal.Decimal
-	var err error
+func (r *BybitRepository) getEntryPrice(req *domain.TV) (*decimal.Decimal, error) {
+	var (
+		entryPrice decimal.Decimal
+		err        error
+	)
 
-	if strings.Contains(symbol, "PERP") {
+	if strings.Contains(req.Order.Symbol, "PERP") {
 		var positions domain.BybitUSDCPositions
 
 		resp, err := r.signedRequestWithHeader(http.MethodPost, "option/usdc/openapi/private/v1/query-position", []byte("{\"category\":\"PERPETUAL\"}"), &positions)
@@ -212,26 +259,36 @@ func (r *BybitRepository) getEntryPrice(symbol, side string) (*decimal.Decimal, 
 		}
 
 		for _, position := range positions.Result.DataList {
-			fmt.Printf("%+v\n", position)
 			entryPrice, err = decimal.NewFromString(position.EntryPrice)
 			if err != nil {
 				return nil, err
 			}
 		}
 	} else {
-		_, _, positions, err := r.Client.LinearGetPosition(symbol)
+		_, _, positions, err := r.Client.LinearGetPosition(req.Order.Symbol)
 		if err != nil {
 			return nil, err
 		}
 
 		for _, position := range positions {
-			if position.Side == side {
+			if position.Side == req.Order.Side {
 				entryPrice = decimal.NewFromFloat(position.EntryPrice)
 			}
 		}
 	}
 
 	return &entryPrice, err
+}
+
+func (r *BybitRepository) getUSDCPosition() (*domain.BybitUSDCPositions, error) {
+	var positions domain.BybitUSDCPositions
+
+	resp, err := r.signedRequestWithHeader(http.MethodPost, "option/usdc/openapi/private/v1/query-position", []byte("{\"category\":\"PERPETUAL\"}"), &positions)
+	if err != nil {
+		return nil, fmt.Errorf("signedRequest err: %w, body: %s", err, resp)
+	}
+
+	return &positions, nil
 }
 
 func (r *BybitRepository) GetWalletInfoUSDC() (*domain.BybitWallet, error) {

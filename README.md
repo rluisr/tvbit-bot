@@ -70,12 +70,14 @@ tvbit-bot fetch your wallet balance and save it to DB. [cron.go](pkg/external/cr
   "dex": "bybit", 
   "api_key": "",
   "api_secret_key": "",
+  "max_position": 0,
   "start_time": "09:00",
   "stop_time": "23:00"
 }
 ```
 
 - **`dex` must be lowercase.**
+- `max_position` is how many active position you have
 - `start_time` `end_time` is optional.
 
 ### [WIP] GET /setting
