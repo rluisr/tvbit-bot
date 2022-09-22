@@ -12,7 +12,7 @@ require (
 	github.com/thrasher-corp/gocryptotrader v0.0.0-20220831004545-7b958d2c0584
 	golang.org/x/sync v0.0.0-20220819030929-7fc1605a5dde
 	gorm.io/driver/mysql v1.3.6
-	gorm.io/gorm v1.23.8
+	gorm.io/gorm v1.23.10
 )
 
 require (
