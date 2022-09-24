@@ -66,6 +66,7 @@ tvbit-bot fetch your wallet balance and save it to DB. [cron.go](pkg/external/cr
 
 ```json
 {
+  "name": "alert name, description or something",
   "is_testnet": true,
   "cex": "bybit", 
   "api_key": "",
