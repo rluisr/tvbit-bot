@@ -67,7 +67,7 @@ tvbit-bot fetch your wallet balance and save it to DB. [cron.go](pkg/external/cr
 ```json
 {
   "is_testnet": true,
-  "dex": "bybit", 
+  "cex": "bybit", 
   "api_key": "",
   "api_secret_key": "",
   "max_position": 0,
@@ -76,7 +76,7 @@ tvbit-bot fetch your wallet balance and save it to DB. [cron.go](pkg/external/cr
 }
 ```
 
-- **`dex` must be lowercase.**
+- **`cex` must be lowercase.**
 - `max_position` is how many active position you have
 - `start_time` `end_time` is optional.
 
@@ -144,7 +144,7 @@ Twitter [@rarirureluis](https://twitter.com/rarirureluis)
 TODO
 -----
 
-**There are no plans to support bybit/options/spot trading and other DEX.**
+**There are no plans to support bybit/options/spot trading and other CEX.**
 
 - [x] [bybit/core] Futures
 - [x] [bybit/core] USDC

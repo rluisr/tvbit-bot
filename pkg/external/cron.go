@@ -44,7 +44,7 @@ func cron() {
 		var walletHistories []domain.WalletHistory
 
 		for _, setting := range settings {
-			switch setting.DEX {
+			switch setting.CEX {
 			case "bybit":
 				tvController.Bybit(domain.TV{
 					IsTestNet:    setting.IsTestnet,

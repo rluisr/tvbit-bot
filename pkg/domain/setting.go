@@ -25,6 +25,6 @@ type Setting struct {
 	IsTestnet    bool          `gorm:"type:tinyint(2);not null" json:"is_testnet" binding:"required"`
 	APIKey       string        `gorm:"type:varchar(255);unique;index:idx_api" json:"api_key" binding:"required"`
 	APISecretKey string        `gorm:"type:varchar(255);unique;index:idx_api" json:"api_secret_key" binding:"required"`
-	DEX          string        `gorm:"type:varchar(255); not null" json:"dex"`
+	CEX          string        `gorm:"type:varchar(255); not null" json:"cex"`
 	MaxPosition  sql.NullInt32 `gorm:"type:tinyint unsigned; default:null" json:"max_position"`
 }
