@@ -22,6 +22,7 @@ Introduction
   "api_key": "",
   "api_secret_key": "",
   "order": {
+    "name": "alert name, description or something",
     "symbol": "BTCUSDT",
     "type": "Market",
     "price": 0, // If type is "Limit" set it as an int greater than 0
@@ -66,7 +67,6 @@ tvbit-bot fetch your wallet balance and save it to DB. [cron.go](pkg/external/cr
 
 ```json
 {
-  "name": "alert name, description or something",
   "is_testnet": true,
   "cex": "bybit", 
   "api_key": "",
