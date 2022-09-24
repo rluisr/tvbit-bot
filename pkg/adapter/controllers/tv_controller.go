@@ -59,7 +59,7 @@ func (controller *TVController) Handle(c *gin.Context) {
 		return
 	}
 
-	// we will support any other DEX in the future.
+	// we will support any other CEX in the future.
 	if true {
 		controller.Bybit(req)
 	}

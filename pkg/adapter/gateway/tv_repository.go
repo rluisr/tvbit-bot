@@ -43,7 +43,7 @@ func (r *TVRepository) SaveOrder(req domain.TV, order *domain.TVOrder) error {
 			return err
 		}
 	}
-	order.DEX = "bybit" // TODO we should support any other DEX
+	order.CEX = "bybit" // TODO we should support any other CEX
 	order.SettingID = setting.ID
 	return r.RWDB.Save(order).Error
 }
