@@ -32,7 +32,7 @@ type TV struct {
 
 type TVOrder struct {
 	gorm.Model
-	Name       string          `gorm:"type:varchar(255)" json:"name"` // alert name, description or something
+	Name       string          `gorm:"type:varchar(255);default:null" json:"name"` // alert name, description or something
 	CEX        string          `gorm:"type:varchar(255);not null" json:"-"`
 	SettingID  uint64          `gorm:"type:uint;not null" json:"-"`
 	OrderID    string          `gorm:"type:varchar(255);uniqueIndex:order_id;not null"`

@@ -1,10 +1,10 @@
 POST /tv
 
 TP/SL: price
-curl -s -XPOST -H "Content-Type: application/json" -d '{"is_test_net": true, "api_key": "OReF54nygvv9IwbC0h", "api_secret_key": "fyyoeWmaLVj74gHsIaThT9WK8T7CpCBjNBFK", "order": { "symbol": "BTCUSDT", "type": "Market", "price": 0, "side": "Sell", "qty": 0.03, "tp": "0", "sl": "0" } }' http://localhost:3001/tv
+curl -s -XPOST -H "Content-Type: application/json" -d '{"is_test_net": true, "api_key": "OReF54nygvv9IwbC0h", "api_secret_key": "fyyoeWmaLVj74gHsIaThT9WK8T7CpCBjNBFK", "order": { "name": "test", "symbol": "BTCUSDT", "type": "Market", "price": 0, "side": "Sell", "qty": 0.03, "tp": "0", "sl": "0" } }' http://localhost:3001/tv
 
 TP/SL: percent
-curl -s -XPOST -H "Content-Type: application/json" -d '{"is_test_net": true, "api_key": "OReF54nygvv9IwbC0h", "api_secret_key": "fyyoeWmaLVj74gHsIaThT9WK8T7CpCBjNBFK", "order": { "symbol": "BTCUSDT", "type": "Market", "price": 0, "side": "Buy", "qty": 0.01, "tp": "1%", "sl": "5%" } }' http://localhost:3001/tv
+curl -s -XPOST -H "Content-Type: application/json" -d '{"is_test_net": true, "api_key": "OReF54nygvv9IwbC0h", "api_secret_key": "fyyoeWmaLVj74gHsIaThT9WK8T7CpCBjNBFK", "order": { "name": "test", "symbol": "BTCUSDT", "type": "Market", "price": 0, "side": "Buy", "qty": 0.01, "tp": "1%", "sl": "5%" } }' http://localhost:3001/tv
 
 GET /setting
 

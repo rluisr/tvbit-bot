@@ -94,21 +94,13 @@ func (r *BybitRepository) CreateOrder(req domain.TV) (string, error) {
 
 // FetchOrder is set entry price
 func (r *BybitRepository) FetchOrder(req *domain.TV, orderID string) error {
-	req.Order = domain.TVOrder{
-		OrderID: orderID,
-		Type:    req.Order.Type,
-		Symbol:  req.Order.Symbol,
-		Side:    req.Order.Side,
-		QTY:     req.Order.QTY,
-		TP:      req.Order.TP,
-		SL:      req.Order.SL,
-	}
-
 	entryPrice, err := r.getEntryPrice(req)
 	if err != nil {
 		return err
 	}
+
 	req.Order.EntryPrice = *entryPrice
+	req.Order.OrderID = orderID
 
 	return nil
 }
