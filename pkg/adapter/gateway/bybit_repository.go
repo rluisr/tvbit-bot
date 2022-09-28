@@ -105,6 +105,21 @@ func (r *BybitRepository) FetchOrder(req *domain.TV, orderID string) error {
 	return nil
 }
 
+func (r *BybitRepository) GetClosedOrderLast(symbol string) (*domain.BybitLinearClosedPnLResponse, error) {
+	params := map[string]interface{}{}
+	params["symbol"] = symbol
+	params["exec_type"] = "Trade"
+	params["limit"] = 1
+
+	var result domain.BybitLinearClosedPnLResponse
+	_, resp, err := r.Client.SignedRequest(http.MethodGet, "private/linear/trade/closed-pnl/list", params, &result)
+	if err != nil {
+		return nil, fmt.Errorf("SignedRequest err: %w, body: %s", err, string(resp))
+	}
+
+	return &result, nil
+}
+
 func (r *BybitRepository) GetActiveOrderCount(req *domain.TV, positions *[]rest.LinearPosition) int {
 	var activeOrder int
 

@@ -22,6 +22,7 @@ package external
 
 import (
 	"context"
+	"os"
 
 	"github.com/rluisr/tvbit-bot/pkg/domain"
 
@@ -35,13 +36,17 @@ func cron() {
 		Verbose: true,
 	})
 
-	task.Task("0 * * * *", func(ctx context.Context) (int, error) {
+	/*
+		Set PnL to an order history.
+		Update a record if createdAt of saved order history on DB is lower than last closed order(GetClosedOrderLast)'s createdAt.
+		Why this implementation?
+		An order_id of open and close is difference, so we can't fetch a closed PnL with open order_id.
+	*/
+	task.Task("* * * * *", func(ctx context.Context) (int, error) {
 		settings, err := tvController.Interactor.TVRepository.GetSettings()
 		if err != nil {
 			return 0, err
 		}
-
-		var walletHistories []domain.WalletHistory
 
 		for _, setting := range settings {
 			switch setting.CEX {
@@ -52,48 +57,95 @@ func cron() {
 					APISecretKey: setting.APISecretKey,
 				})
 
-				// USDC
-				bybitUSDCWallet, err := tvController.Interactor.BybitRepository.GetWalletInfoUSDC()
+				savedPLNullOrders, err := tvController.Interactor.TVRepository.GetPLNullOrders(setting.ID)
 				if err != nil {
-					return 1, err
+					return 0, err
 				}
 
-				balance, err := decimal.NewFromString(bybitUSDCWallet.Result.WalletBalance)
-				if err != nil {
-					return 1, err
-				}
-				totalRPL, err := decimal.NewFromString(bybitUSDCWallet.Result.TotalRPL)
-				if err != nil {
-					return 1, err
-				}
+				for _, savedOrder := range *savedPLNullOrders {
+					closedOrder, err := tvController.Interactor.BybitRepository.GetClosedOrderLast(savedOrder.Symbol)
+					if err != nil {
+						return 0, err
+					}
 
-				walletHistories = append(walletHistories, domain.WalletHistory{
-					SettingID: setting.ID,
-					Type:      "usdc",
-					Balance:   balance,
-					TotalRPL:  totalRPL,
-				})
-
-				// Deriv USDT
-				bybitDerivWallet, err := tvController.Interactor.BybitRepository.GetWalletInfoDeriv()
-				if err != nil {
-					return 1, err
+					if savedOrder.CreatedAt.Unix() < closedOrder.Result.Data[0].CreatedAt {
+						savedOrder.PL = decimal.NewFromFloat(closedOrder.Result.Data[0].ClosedPnl)
+						err = tvController.Interactor.TVRepository.UpdateOrder(&savedOrder)
+						if err != nil {
+							return 0, err
+						}
+						break
+					}
 				}
-				walletHistories = append(walletHistories, domain.WalletHistory{
-					SettingID: setting.ID,
-					Type:      "usdt",
-					Balance:   decimal.NewFromFloat(bybitDerivWallet.Equity),
-					TotalRPL:  decimal.NewFromFloat(bybitDerivWallet.CumRealisedPnl),
-				})
 			}
-		}
-
-		err = tvController.Interactor.TVRepository.SaveWalletHistories(walletHistories)
-		if err != nil {
-			return 1, err
 		}
 		return 0, nil
 	})
 
+	if os.Getenv("SERVER_ENV") != "local" {
+
+		/*
+			Save wallet balance
+		*/
+		task.Task("0 * * * *", func(ctx context.Context) (int, error) {
+			settings, err := tvController.Interactor.TVRepository.GetSettings()
+			if err != nil {
+				return 0, err
+			}
+
+			var walletHistories []domain.WalletHistory
+
+			for _, setting := range settings {
+				switch setting.CEX {
+				case "bybit":
+					tvController.Bybit(domain.TV{
+						IsTestNet:    setting.IsTestnet,
+						APIKey:       setting.APIKey,
+						APISecretKey: setting.APISecretKey,
+					})
+
+					// USDC
+					bybitUSDCWallet, err := tvController.Interactor.BybitRepository.GetWalletInfoUSDC()
+					if err != nil {
+						return 1, err
+					}
+
+					balance, err := decimal.NewFromString(bybitUSDCWallet.Result.WalletBalance)
+					if err != nil {
+						return 1, err
+					}
+					totalRPL, err := decimal.NewFromString(bybitUSDCWallet.Result.TotalRPL)
+					if err != nil {
+						return 1, err
+					}
+
+					walletHistories = append(walletHistories, domain.WalletHistory{
+						SettingID: setting.ID,
+						Type:      "usdc",
+						Balance:   balance,
+						TotalRPL:  totalRPL,
+					})
+
+					// Deriv USDT
+					bybitDerivWallet, err := tvController.Interactor.BybitRepository.GetWalletInfoDeriv()
+					if err != nil {
+						return 1, err
+					}
+					walletHistories = append(walletHistories, domain.WalletHistory{
+						SettingID: setting.ID,
+						Type:      "usdt",
+						Balance:   decimal.NewFromFloat(bybitDerivWallet.Equity),
+						TotalRPL:  decimal.NewFromFloat(bybitDerivWallet.CumRealisedPnl),
+					})
+				}
+			}
+
+			err = tvController.Interactor.TVRepository.SaveWalletHistories(walletHistories)
+			if err != nil {
+				return 1, err
+			}
+			return 0, nil
+		})
+	}
 	task.Run()
 }

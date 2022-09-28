@@ -134,6 +134,42 @@ type BybitUSDCPositions struct {
 	RetMsg  string `json:"retMsg"`
 }
 
+type BybitLinearClosedPnLResponse struct {
+	RetCode int    `json:"ret_code"`
+	RetMsg  string `json:"ret_msg"`
+	Result  struct {
+		Data        []BybitLinearClosedPnL `json:"data"`
+		CurrentPage int                    `json:"current_page"`
+	} `json:"result"`
+	ExtCode          string `json:"ext_code"`
+	ExtInfo          string `json:"ext_info"`
+	TimeNow          string `json:"time_now"`
+	RateLimitStatus  int    `json:"rate_limit_status"`
+	RateLimitResetMs int64  `json:"rate_limit_reset_ms"`
+	RateLimit        int    `json:"rate_limit"`
+}
+
+type BybitLinearClosedPnL struct {
+	ID            int     `json:"id"`
+	UserID        int     `json:"user_id"`
+	Symbol        string  `json:"symbol"`
+	OrderID       string  `json:"order_id"`
+	Side          string  `json:"side"`
+	Qty           float64 `json:"qty"`
+	OrderPrice    float64 `json:"order_price"`
+	OrderType     string  `json:"order_type"`
+	ExecType      string  `json:"exec_type"`
+	ClosedSize    float64 `json:"closed_size"`
+	CumEntryValue float64 `json:"cum_entry_value"`
+	AvgEntryPrice float64 `json:"avg_entry_price"`
+	CumExitValue  float64 `json:"cum_exit_value"`
+	AvgExitPrice  float64 `json:"avg_exit_price"`
+	ClosedPnl     float64 `json:"closed_pnl"`
+	FillCount     int     `json:"fill_count"`
+	Leverage      int     `json:"leverage"`
+	CreatedAt     int64   `json:"created_at"`
+}
+
 type BybitWallet struct {
 	Result struct {
 		WalletBalance    string `json:"walletBalance"`

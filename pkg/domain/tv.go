@@ -44,6 +44,7 @@ type TVOrder struct {
 	QTY        float64         `gorm:"type:float" json:"qty" binding:"required"`
 	TP         interface{}     `gorm:"type:float" json:"tp"`
 	SL         interface{}     `gorm:"type:float" json:"sl"`
+	PL         decimal.Decimal `gorm:"type:decimal(10,4)" json:"-"`
 }
 
 type Tabler interface {

@@ -33,6 +33,10 @@ type (
 	}
 )
 
+func (r *TVRepository) UpdateOrder(order *domain.TVOrder) error {
+	return r.RWDB.Save(&order).Error
+}
+
 func (r *TVRepository) SaveOrder(req domain.TV, order *domain.TVOrder) error {
 	var setting domain.Setting
 	err := r.RODB.Where("api_key = ? AND api_secret_key = ?", req.APIKey, req.APISecretKey).First(&setting).Error
@@ -70,4 +74,10 @@ func (r *TVRepository) GetSettings() ([]domain.Setting, error) {
 
 func (r *TVRepository) SaveWalletHistories(histories []domain.WalletHistory) error {
 	return r.RWDB.Create(&histories).Error
+}
+
+func (r *TVRepository) GetPLNullOrders(settingID uint64) (*[]domain.TVOrder, error) {
+	var orders []domain.TVOrder
+	err := r.RODB.Where("setting_id = ? AND pl IS NULL", settingID).Order("id desc").Find(&orders).Error
+	return &orders, err
 }
