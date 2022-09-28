@@ -78,6 +78,6 @@ func (r *TVRepository) SaveWalletHistories(histories []domain.WalletHistory) err
 
 func (r *TVRepository) GetPLNullOrders(settingID uint64) (*[]domain.TVOrder, error) {
 	var orders []domain.TVOrder
-	err := r.RODB.Where("setting_id = ? AND pl IS NULL", settingID).Order("id desc").Find(&orders).Error
+	err := r.RODB.Where("setting_id = ? AND (pl IS NULL OR pl = 0)", settingID).Order("id desc").Find(&orders).Error
 	return &orders, err
 }
