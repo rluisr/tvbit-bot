@@ -4,7 +4,7 @@ go 1.19
 
 require (
 	github.com/Netflix/go-env v0.0.0-20210215222557-e437a7e7f9fb
-	github.com/adhocore/gronx v0.2.7
+	github.com/adhocore/gronx v1.1.0
 	github.com/frankrap/bybit-api v1.0.8
 	github.com/gin-gonic/gin v1.8.1
 	github.com/jinzhu/copier v0.3.5
