@@ -59,13 +59,9 @@ You have to set environment variables
 - [bybit](pkg/external/bybit/config.go)
 - [mysql](pkg/external/mysql/config.go)
 
-### Docker
+### Container
 
 `ghcr.io/rluisr/tvbit-bot:latest`
-
-### Binary
-
-[Release page.](https://github.com/rluisr/tvbit-bot/releases)
 
 ### MySQL
 
