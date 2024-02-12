@@ -1,6 +1,7 @@
 tvbit-bot
 ============
 
+[![release](https://github.com/rluisr/tvbit-bot/actions/workflows/release.yml/badge.svg)](https://github.com/rluisr/tvbit-bot/actions/workflows/release.yml)
 [![lint](https://github.com/rluisr/tvbit-bot/actions/workflows/lint.yml/badge.svg?branch=master)](https://github.com/rluisr/tvbit-bot/actions/workflows/lint.yml)
 
 tvbit-bot is TradingView webhook handler for Bybit.
