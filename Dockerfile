@@ -1,6 +1,7 @@
 # syntax = docker/dockerfile:1.3-labs
 
 ARG APP_NAME="tvbit-bot"
+ARG VERSION=0.0.0
 
 FROM golang:1 as builder
 
@@ -10,7 +11,7 @@ COPY go.* .
 RUN --mount=type=cache,target=/root/.cache/go-build go mod download
 
 COPY . .
-RUN CGO_ENABLED=0 GOOS=linux go build -o /app cmd/main.go
+RUN CGO_ENABLED=0 GOOS=linux go build -ldflags "-X github.com/rluisr/tvbit-bot/pkg/external.version=${VERSION}" -o /app cmd/main.go
 
 FROM gcr.io/distroless/static-debian12 as production
 
