@@ -22,6 +22,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/hirokisan/bybit/v2"
 	"github.com/rluisr/tvbit-bot/pkg/adapter/gateway"
 	"github.com/rluisr/tvbit-bot/pkg/domain"
 	"github.com/rluisr/tvbit-bot/pkg/usecase"
@@ -32,7 +33,7 @@ type TVController struct {
 	Interactor usecase.TVInteractor
 }
 
-func NewTVController(rwDB, roDB *gorm.DB, httpClient *http.Client) *TVController {
+func NewTVController(rwDB, roDB *gorm.DB, bybitClient *bybit.Client) *TVController {
 	return &TVController{
 		Interactor: usecase.TVInteractor{
 			TVRepository: &gateway.TVRepository{
@@ -40,28 +41,18 @@ func NewTVController(rwDB, roDB *gorm.DB, httpClient *http.Client) *TVController
 				RODB: roDB,
 			},
 			BybitRepository: &gateway.BybitRepository{
-				Client:     nil,
-				HTTPClient: httpClient,
+				Client: bybitClient,
 			},
 		},
 	}
 }
 
-func (controller *TVController) Bybit(req domain.TV) {
-	controller.Interactor.BybitRepository.Set(req)
-}
-
 func (controller *TVController) Handle(c *gin.Context) {
-	var req domain.TV
+	var req domain.Order
 	err := c.ShouldBindJSON(&req)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, NewError(http.StatusBadRequest, err))
+		c.JSON(http.StatusBadRequest, NewError(http.StatusBadRequest, err))
 		return
-	}
-
-	// we will support any other CEX in the future.
-	if true {
-		controller.Bybit(req)
 	}
 
 	order, err := controller.Interactor.CreateOrder(req)

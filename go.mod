@@ -4,13 +4,12 @@ go 1.21
 
 require (
 	github.com/Netflix/go-env v0.0.0-20220526054621-78278af1949d
-	github.com/adhocore/gronx v1.6.7
 	github.com/frankrap/bybit-api v1.0.8
 	github.com/gin-gonic/gin v1.9.1
+	github.com/hirokisan/bybit/v2 v2.28.5
 	github.com/jinzhu/copier v0.4.0
 	github.com/shopspring/decimal v1.3.1
 	github.com/thrasher-corp/gocryptotrader v0.0.0-20240212070311-9ff502bac213
-	golang.org/x/sync v0.6.0
 	gorm.io/driver/mysql v1.5.4
 	gorm.io/gorm v1.25.7
 )
@@ -26,6 +25,8 @@ require (
 	github.com/go-playground/validator/v10 v10.18.0 // indirect
 	github.com/go-sql-driver/mysql v1.7.1 // indirect
 	github.com/goccy/go-json v0.10.2 // indirect
+	github.com/google/go-querystring v1.1.0 // indirect
+	github.com/gorilla/websocket v1.5.1 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/jinzhu/now v1.1.5 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
@@ -43,6 +44,5 @@ require (
 	golang.org/x/sys v0.17.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
 	google.golang.org/protobuf v1.32.0 // indirect
-	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

@@ -20,7 +20,7 @@ var (
 const (
 	DBMaxOpenConn = 10
 	DBMaxIdleConn = 5
-	DBMaxLifeTime = time.Second * 30
+	DBMaxLifeTime = time.Second
 )
 
 func Connect() (*gorm.DB, *gorm.DB, error) {
@@ -64,7 +64,7 @@ func Connect() (*gorm.DB, *gorm.DB, error) {
 	if err != nil {
 		return nil, nil, err
 	}
-	err = rwDB.AutoMigrate(&domain.Setting{}, &domain.TVOrder{}, &domain.WalletHistory{})
+	err = rwDB.AutoMigrate(&domain.Order{}, &domain.WalletHistory{})
 	if err != nil {
 		return nil, nil, err
 	}

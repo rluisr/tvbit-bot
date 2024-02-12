@@ -22,25 +22,24 @@ package external
 
 import (
 	"github.com/rluisr/tvbit-bot/pkg/adapter/controllers"
+	tvbitBybit "github.com/rluisr/tvbit-bot/pkg/external/bybit"
 	"github.com/rluisr/tvbit-bot/pkg/external/mysql"
 )
 
 var (
-	tvController      *controllers.TVController
-	settingController *controllers.SettingController
+	tvController *controllers.TVController
 )
 
 func Init() (err error) {
-	go cron()
-
 	rwDB, roDB, err := mysql.Connect()
 	if err != nil {
 		return err
 	}
 
 	httpClient := NewHTTPClient()
-	tvController = controllers.NewTVController(rwDB, roDB, httpClient)
-	settingController = controllers.NewSettingController(rwDB, roDB)
+	bybitClient := tvbitBybit.Init(httpClient)
+
+	tvController = controllers.NewTVController(rwDB, roDB, bybitClient)
 
 	return nil
 }

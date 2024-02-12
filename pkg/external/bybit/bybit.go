@@ -19,20 +19,25 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package bybit
 
 import (
+	"fmt"
 	"net/http"
 
-	"github.com/frankrap/bybit-api/rest"
-	"github.com/rluisr/tvbit-bot/pkg/domain"
+	"github.com/hirokisan/bybit/v2"
 )
 
-var BaseURL string
-
-func Init(req domain.TV, httpClient *http.Client) (*rest.ByBit, string) {
-	if req.IsTestNet {
-		BaseURL = "https://api-testnet.bybit.com/"
-	} else {
-		BaseURL = "https://api.bybit.com/"
+func Init(httpClient *http.Client) *bybit.Client {
+	config, err := NewConfig()
+	if err != nil {
+		panic(fmt.Errorf("bybit.NewConfig err: %w", err))
 	}
 
-	return rest.New(httpClient, BaseURL, req.APIKey, req.APISecretKey, false), BaseURL
+	var client *bybit.Client
+
+	if config.IsTestnet {
+		client = bybit.NewTestClient().WithAuth(config.APIKey, config.APISecret).WithHTTPClient(httpClient)
+	} else {
+		client = bybit.NewClient().WithAuth(config.APIKey, config.APISecret).WithHTTPClient(httpClient)
+	}
+
+	return client
 }

@@ -18,16 +18,19 @@
  * /
  */
 
-package domain
+package bybit
 
-import (
-	"github.com/shopspring/decimal"
-	"gorm.io/gorm"
-)
+import "github.com/Netflix/go-env"
 
-type WalletHistory struct {
-	gorm.Model
-	Type     string          `gorm:"not null;comment: spot/usdc/futures etc"`
-	Balance  decimal.Decimal `gorm:"type:decimal(10,4);not null"`
-	TotalRPL decimal.Decimal `gorm:"type:decimal(10,4);not null"`
+type Config struct {
+	APIKey    string `env:"BYBIT_API_KEY,required"`
+	APISecret string `env:"BYBIT_API_SECRET,required"`
+	IsTestnet bool   `env:"BYBIT_IS_TESTNET,required"`
+}
+
+func NewConfig() (*Config, error) {
+	var config Config
+
+	_, err := env.UnmarshalFromEnviron(&config)
+	return &config, err
 }

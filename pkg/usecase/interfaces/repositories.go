@@ -19,33 +19,18 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package interfaces
 
 import (
-	"github.com/frankrap/bybit-api/rest"
 	"github.com/rluisr/tvbit-bot/pkg/domain"
 )
 
 type TVRepository interface {
-	SaveOrder(domain.TV, *domain.TVOrder) error
-	UpdateOrder(order *domain.TVOrder) error
-	GetSetting(apiKey, apiSecretKey string) (*domain.Setting, error)
-	GetSettings() ([]domain.Setting, error)
+	SaveOrder(*domain.Order) error
+	UpdateOrder(*domain.Order) error
 	SaveWalletHistories([]domain.WalletHistory) error
-	GetPLNullOrders(settingID uint64) (*[]domain.TVOrder, error)
 }
 
 type BybitRepository interface {
-	Set(domain.TV)
-	CreateOrder(domain.TV) (string, error)
-	CalculateTPSL(domain.TV, interface{}, string) (float64, error)
-	FetchOrder(req *domain.TV, orderID string) error
-	GetWalletInfoUSDC() (*domain.BybitWallet, error)
-	GetWalletInfoDeriv() (*rest.Balance, error)
-	GetActiveOrderCount(req *domain.TV, positions *[]rest.LinearPosition) int
-	GetPositions(symbol string) (*[]rest.LinearPosition, error)
-	GetClosedOrderLast(symbol string) (*domain.BybitLinearClosedPnLResponse, error)
-}
-
-type SettingRepository interface {
-	Get(domain.Setting) (domain.Setting, error)
-	GetByID(uint64) (domain.Setting, error)
-	Set(domain.Setting) (domain.Setting, error)
+	CreateOrder(*domain.Order) error
+	FetchOrder(*domain.Order) error
+	CalculateTPSL(order domain.Order, value, isType string) (string, error)
+	GetWalletBalance() (float64, error)
 }

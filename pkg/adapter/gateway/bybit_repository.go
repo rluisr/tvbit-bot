@@ -1,22 +1,18 @@
 package gateway
 
 import (
-	"encoding/json"
+	"errors"
 	"fmt"
-	"io"
 	"math"
 	"net/http"
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/jinzhu/copier"
-
-	"github.com/frankrap/bybit-api/rest"
+	"github.com/hirokisan/bybit/v2"
 	"github.com/rluisr/tvbit-bot/pkg/domain"
-	"github.com/rluisr/tvbit-bot/pkg/external/bybit"
+	"github.com/rluisr/tvbit-bot/utils"
 	"github.com/shopspring/decimal"
-	"github.com/thrasher-corp/gocryptotrader/common/crypto"
 )
 
 type (
@@ -25,338 +21,182 @@ type (
 		APIKey       string
 		APISecretKey string
 		HTTPClient   *http.Client
-		Client       *rest.ByBit
+		Client       *bybit.Client
 	}
 )
 
-func (r *BybitRepository) Set(req domain.TV) {
-	r.Client, r.BaseURL = bybit.Init(req, r.HTTPClient)
-	r.APIKey = req.APIKey
-	r.APISecretKey = req.APISecretKey
-}
-
-// GetPositions return an array of positions.
-// This func uses deep copy if the symbol is PERP/USDC so return positions are not exactly but only used for GetActiveOrderCount
-func (r *BybitRepository) GetPositions(symbol string) (*[]rest.LinearPosition, error) {
-	var positions []rest.LinearPosition
-
-	if strings.Contains(symbol, "PERP") {
-		usdcPositions, err := r.getUSDCPosition()
-		if err != nil {
-			return nil, err
-		}
-
-		err = copier.Copy(&positions, &usdcPositions.Result.DataList)
-		if err != nil {
-			return nil, fmt.Errorf("GetPositions failed deep copy %w", err)
-		}
-	} else {
-		_, _, linearPositions, err := r.Client.LinearGetPosition(symbol)
-		if err != nil {
-			return nil, err
-		}
-		positions = linearPositions
+func (r *BybitRepository) CreateOrder(req *domain.Order) error {
+	orderParam := bybit.V5CreateOrderParam{
+		Category:   bybit.CategoryV5Linear,
+		Symbol:     bybit.SymbolV5(req.Symbol),
+		Qty:        req.QTY,
+		TakeProfit: &req.TP,
+		StopLoss:   &req.SL,
+		Side:       bybit.Side(req.Side),
 	}
 
-	return &positions, nil
-}
-
-func (r *BybitRepository) CreateOrder(req domain.TV) (string, error) {
-	var orderID string
-
-	if strings.Contains(req.Order.Symbol, "PERP") {
-		params := map[string]interface{}{}
-		params["symbol"] = req.Order.Symbol
-		params["orderType"] = req.Order.Type
-		params["orderFilter"] = "Order"
-		params["orderQty"] = req.Order.QTY
-		params["side"] = req.Order.Side
-		params["timeInForce"] = "ImmediateOrCancel"
-		params["takeProfit"] = strconv.FormatFloat(req.Order.TP.(float64), 'f', -1, 64)
-		params["stopLoss"] = strconv.FormatFloat(req.Order.SL.(float64), 'f', -1, 64)
-
-		var order domain.BybitPerpResponseOrder
-		_, resp, err := r.Client.SignedRequest(http.MethodPost, "perpetual/usdc/openapi/private/v1/place-order", params, &order)
-		if err != nil {
-			return "", fmt.Errorf("SignedRequest err: %w, body: %s", err, string(resp))
-		}
-		orderID = order.Result.OrderID
-	} else {
-		_, _, order, err := r.Client.LinearCreateOrder(req.Order.Side, req.Order.Type, req.Order.Price, req.Order.QTY, "ImmediateOrCancel", req.Order.TP.(float64), req.Order.SL.(float64), false, false, "", req.Order.Symbol)
-		if err != nil {
-			return "", err
-		}
-		orderID = order.OrderId
+	if req.Type == "Limit" {
+		orderParam.OrderType = bybit.OrderTypeLimit
+		orderParam.Price = &req.Price
+	}
+	if req.Type == "Market" {
+		orderParam.OrderType = bybit.OrderTypeMarket
 	}
 
-	return orderID, nil
-}
+	if req.Side == "Buy" {
+		buyHedge := bybit.PositionIdxHedgeBuy
+		orderParam.PositionIdx = &buyHedge
+	} else {
+		sellHedge := bybit.PositionIdxHedgeSell
+		orderParam.PositionIdx = &sellHedge
+	}
 
-// FetchOrder is set entry price
-func (r *BybitRepository) FetchOrder(req *domain.TV, orderID string) error {
-	entryPrice, err := r.getEntryPrice(req)
+	resp, err := r.Client.V5().Order().CreateOrder(orderParam)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed CreateOrder: %w", err)
 	}
-
-	req.Order.EntryPrice = *entryPrice
-	req.Order.OrderID = orderID
+	req.OrderID = resp.Result.OrderID
 
 	return nil
 }
 
-func (r *BybitRepository) GetClosedOrderLast(symbol string) (*domain.BybitLinearClosedPnLResponse, error) {
-	params := map[string]interface{}{}
-	params["symbol"] = symbol
-	params["exec_type"] = "Trade"
-	params["limit"] = 1
+func (r *BybitRepository) FetchOrder(req *domain.Order) error {
+	symbol := bybit.SymbolV5(req.Symbol)
+	settle := bybit.CoinUSDT
 
-	var result domain.BybitLinearClosedPnLResponse
-	_, resp, err := r.Client.SignedRequest(http.MethodGet, "private/linear/trade/closed-pnl/list", params, &result)
-	if err != nil {
-		return nil, fmt.Errorf("SignedRequest err: %w, body: %s", err, string(resp))
-	}
-
-	return &result, nil
-}
-
-func (r *BybitRepository) GetActiveOrderCount(req *domain.TV, positions *[]rest.LinearPosition) int {
-	var activeOrder int
-
-	if strings.Contains(req.Order.Symbol, "PERP") {
-		activeOrder = len(*positions)
-	} else {
-		for _, position := range *positions {
-			if position.Side == req.Order.Side {
-				if position.Size > 0 {
-					activeOrder = 1
-				}
+	for i := 0; i < 10; i++ {
+		order, err := r.Client.V5().Order().GetOpenOrders(bybit.V5GetOpenOrdersParam{
+			Category:   bybit.CategoryV5Linear,
+			Symbol:     &symbol,
+			OrderID:    &req.OrderID,
+			SettleCoin: &settle,
+		})
+		if err != nil {
+			if strings.Contains(err.Error(), "does not exist") {
+				continue
 			}
+			return fmt.Errorf("failed GetOrder: %w", err)
 		}
+
+		if len(order.Result.List) == 0 {
+			time.Sleep(1 * time.Second)
+			continue
+		}
+
+		entryPrice, err := decimal.NewFromString(order.Result.List[0].AvgPrice)
+		if err != nil {
+			return err
+		}
+
+		req.EntryPrice = entryPrice
+		break
 	}
 
-	return activeOrder
+	return nil
 }
 
-func (r *BybitRepository) CalculateTPSL(req domain.TV, value interface{}, isType string) (float64, error) {
+func (r *BybitRepository) CalculateTPSL(req domain.Order, value, isType string) (string, error) {
+	if value == "" || value == "0" {
+		return "0", nil
+	}
+
+	currentPrice, err := r.getPrice(req.Symbol)
+	if err != nil {
+		return "0", err
+	}
+
+	if strings.Contains(value, "%") {
+		return r.calculateTPSLByPercentage(req, value, isType, currentPrice)
+	}
+
+	return r.calculateTPSLByFixedPrice(req, value, currentPrice)
+}
+
+func (r *BybitRepository) calculateTPSLByPercentage(req domain.Order, value, isType string, currentPrice float64) (string, error) {
+	var price float64
+	if req.Price == "0" {
+		price = currentPrice
+	} else {
+		price = utils.StringToFloat64(req.Price)
+	}
+
+	tpslStr := strings.Replace(value, "%", "", 1)
+	tpsl, err := strconv.ParseFloat(tpslStr, 64)
+	if err != nil {
+		return "0", errors.New("failed to parse to float64 " + tpslStr)
+	}
+	tpsl *= 0.1
+
+	qtyF64 := utils.StringToFloat64(req.QTY)
+
+	switch req.Side {
+	case "Buy":
+		if isType == "TP" {
+			return utils.Float64ToString((price * tpsl * qtyF64) + price), nil
+		}
+		return utils.Float64ToString(math.Abs((price * tpsl * qtyF64) - price)), nil
+	case "Sell":
+		if isType == "SL" {
+			return utils.Float64ToString((price * tpsl * qtyF64) + price), nil
+		}
+		return utils.Float64ToString(math.Abs((price * tpsl * qtyF64) - price)), nil
+	default:
+		return "0", errors.New("unknown request / isType: " + isType)
+	}
+}
+
+func (r *BybitRepository) calculateTPSLByFixedPrice(req domain.Order, value string, currentPrice float64) (string, error) {
+	var inputPrice float64
 	var err error
 
-	str, isOK := value.(string)
-	if !isOK {
-		return 0, fmt.Errorf("failed to assertion to string: %v", value)
+	switch {
+	case strings.Contains(value, "+"):
+		inputPriceString := strings.Replace(value, "+", "", 1)
+		inputPrice, err = strconv.ParseFloat(inputPriceString, 64)
+		if err != nil {
+			return "0", errors.New("convert string to float err " + err.Error())
+		}
+	case strings.Contains(value, "-"):
+		inputPriceString := strings.Replace(value, "-", "", 1)
+		inputPrice, err = strconv.ParseFloat(inputPriceString, 64)
+		if err != nil {
+			return "0", errors.New("convert string to float err " + err.Error())
+		}
+	default:
+		return value, nil
 	}
 
-	if str == "" || str == "0" {
-		return 0, nil
+	if req.Side == "Sell" {
+		return utils.Float64ToString(currentPrice + inputPrice), nil
+	}
+	return utils.Float64ToString(currentPrice - inputPrice), nil
+}
+
+// getPrice returns index price
+func (r *BybitRepository) getPrice(symbol string) (float64, error) {
+	v5symbol := bybit.SymbolV5(symbol)
+
+	resp, err := r.Client.V5().Market().GetTickers(bybit.V5GetTickersParam{
+		Category: bybit.CategoryV5Linear,
+		Symbol:   &v5symbol,
+	})
+	if err != nil {
+		return 0, fmt.Errorf("bybit GetTickers(): %w", err)
 	}
 
-	currentPrice, err := r.getMarkPrice(req.Order.Symbol)
+	return utils.StringToFloat64(resp.Result.LinearInverse.List[0].IndexPrice), nil
+}
+
+func (r *BybitRepository) GetWalletBalance() (float64, error) {
+	resp, err := r.Client.V5().Account().GetWalletBalance(bybit.AccountTypeUnified, []bybit.Coin{bybit.CoinUSDT})
 	if err != nil {
 		return 0, err
 	}
 
-	if strings.Contains(str, "%") {
-		var price float64
-
-		if req.Order.Price == 0 {
-			price = currentPrice
-		} else {
-			price = req.Order.Price
-		}
-
-		tpslStr := strings.Replace(value.(string), "%", "", 1)
-		tpsl, err := strconv.ParseFloat(tpslStr, 64)
-		if err != nil {
-			return 0, fmt.Errorf("failed to parse to float64 %s", tpslStr)
-		}
-		tpsl = tpsl * 0.1
-
-		switch req.Order.Side {
-		case "Buy":
-			if isType == "TP" {
-				return (price * tpsl * req.Order.QTY) + price, nil
-			}
-			return math.Abs((price * tpsl * req.Order.QTY) - price), nil
-		case "Sell":
-			if isType == "SL" {
-				return (price * tpsl * req.Order.QTY) + price, nil
-			}
-			return math.Abs((price * tpsl * req.Order.QTY) - price), nil
-		default:
-			return 0, fmt.Errorf("unknown request: %v / isType: %s", req, isType)
-		}
-	}
-
-	if strings.Contains(str, "+") {
-		inputPriceString := strings.Replace(str, "+", "", 1)
-		inputPrice, err := strconv.Atoi(inputPriceString)
-		if err != nil {
-			return 0, fmt.Errorf("convert string to int err %w", err)
-		}
-		if req.Order.Side == "Sell" {
-			return currentPrice - float64(inputPrice), nil
-		}
-		return currentPrice + float64(inputPrice), nil
-	}
-	if strings.Contains(str, "-") {
-		inputPriceString := strings.Replace(str, "-", "", 1)
-		inputPrice, err := strconv.Atoi(inputPriceString)
-		if err != nil {
-			return 0, fmt.Errorf("convert string to int err %w", err)
-		}
-		if req.Order.Side == "Sell" {
-			return currentPrice + float64(inputPrice), nil
-		}
-		return currentPrice - float64(inputPrice), nil
-	}
-
-	f64, isOK := value.(float64)
-	if !isOK {
-		return 0, fmt.Errorf("failed to assertion to float64: %v", value)
-	}
-
-	return f64, nil
-}
-
-// getMarkPrice returns mark price
-func (r *BybitRepository) getMarkPrice(symbol string) (float64, error) {
-	var isPerp bool
-
-	var tickersURL string
-	if strings.Contains(symbol, "PERP") {
-		isPerp = true
-		tickersURL = fmt.Sprintf("perpetual/usdc/openapi/public/v1/tick?symbol=%s", symbol)
-	} else {
-		tickersURL = fmt.Sprintf("derivatives/v3/public/tickers?category=linear&symbol=%s", symbol)
-	}
-
-	var markPriceStr string
-
-	if !isPerp {
-		var ticker domain.BybitDerivTicker
-		_, resp, err := r.Client.PublicRequest(http.MethodGet, tickersURL, nil, &ticker)
-		if err != nil {
-			return 0, fmt.Errorf("PublicRequest err: %w, body: %s", err, string(resp))
-		}
-		markPriceStr = ticker.Result.List[0].MarkPrice
-	} else {
-		var ticker domain.BybitPerpTicker
-		_, resp, err := r.Client.PublicRequest(http.MethodGet, tickersURL, nil, &ticker)
-		if err != nil {
-			return 0, fmt.Errorf("PublicRequest err: %w, body: %s", err, string(resp))
-		}
-		markPriceStr = ticker.Result.MarkPrice
-	}
-
-	return strconv.ParseFloat(markPriceStr, 64)
-}
-
-func (r *BybitRepository) getEntryPrice(req *domain.TV) (*decimal.Decimal, error) {
-	var (
-		entryPrice decimal.Decimal
-		err        error
-	)
-
-	if strings.Contains(req.Order.Symbol, "PERP") {
-		var positions domain.BybitUSDCPositions
-
-		resp, err := r.signedRequestWithHeader(http.MethodPost, "option/usdc/openapi/private/v1/query-position", []byte("{\"category\":\"PERPETUAL\"}"), &positions)
-		if err != nil {
-			return nil, fmt.Errorf("signedRequest err: %w, body: %s", err, resp)
-		}
-
-		for _, position := range positions.Result.DataList {
-			entryPrice, err = decimal.NewFromString(position.EntryPrice)
-			if err != nil {
-				return nil, err
-			}
-		}
-	} else {
-		_, _, positions, err := r.Client.LinearGetPosition(req.Order.Symbol)
-		if err != nil {
-			return nil, err
-		}
-
-		for _, position := range positions {
-			if position.Side == req.Order.Side {
-				entryPrice = decimal.NewFromFloat(position.EntryPrice)
-			}
-		}
-	}
-
-	return &entryPrice, err
-}
-
-func (r *BybitRepository) getUSDCPosition() (*domain.BybitUSDCPositions, error) {
-	var positions domain.BybitUSDCPositions
-
-	resp, err := r.signedRequestWithHeader(http.MethodPost, "option/usdc/openapi/private/v1/query-position", []byte("{\"category\":\"PERPETUAL\"}"), &positions)
+	balance, err := strconv.ParseFloat(resp.Result.List[0].TotalAvailableBalance, 64)
 	if err != nil {
-		return nil, fmt.Errorf("signedRequest err: %w, body: %s", err, resp)
+		return 0, err
 	}
 
-	return &positions, nil
-}
-
-func (r *BybitRepository) GetWalletInfoUSDC() (*domain.BybitWallet, error) {
-	var wallet domain.BybitWallet
-
-	resp, err := r.signedRequestWithHeader(http.MethodPost, "option/usdc/openapi/private/v1/query-wallet-balance", []byte("{}"), &wallet)
-	if err != nil {
-		return nil, fmt.Errorf("signedRequest err: %w, body: %s", err, resp)
-	}
-
-	return &wallet, nil
-}
-
-func (r *BybitRepository) GetWalletInfoDeriv() (*rest.Balance, error) {
-	_, _, wallet, err := r.Client.GetWalletBalance("USDT")
-	if err != nil {
-		return nil, err
-	}
-
-	return &wallet, nil
-}
-
-func (r *BybitRepository) signedRequestWithHeader(method, path string, body []byte, result interface{}) (string, error) {
-	var payload io.Reader
-
-	nowTimeInMilli := strconv.FormatInt(time.Now().UnixMilli(), 10)
-
-	if body == nil {
-		// TODO have to using query params. it's not working when query params are passed.
-		payload = strings.NewReader("")
-	} else {
-		payload = strings.NewReader(string(body))
-	}
-
-	signInput := nowTimeInMilli + r.APIKey + "5000" + string(body)
-	hmacSigned, err := crypto.GetHMAC(crypto.HashSHA256, []byte(signInput), []byte(r.APISecretKey))
-	if err != nil {
-		return "", err
-	}
-
-	url := fmt.Sprintf("%s%s", r.BaseURL, path)
-
-	req, _ := http.NewRequest(method, url, payload)
-	req.Header.Add("X-BAPI-API-KEY", r.APIKey)
-	req.Header.Add("X-BAPI-SIGN", crypto.HexEncodeToString(hmacSigned))
-	req.Header.Add("X-BAPI-SIGN-TYPE", "2")
-	req.Header.Add("X-BAPI-TIMESTAMP", nowTimeInMilli)
-	req.Header.Add("X-BAPI-RECV-WINDOW", "5000")
-
-	resp, err := r.HTTPClient.Do(req)
-	if err != nil {
-		return "", err
-	}
-	defer resp.Body.Close()
-
-	b, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return "", err
-	}
-
-	err = json.Unmarshal(b, result)
-
-	return string(b), err
+	return balance, nil
 }

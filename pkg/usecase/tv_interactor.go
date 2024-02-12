@@ -19,14 +19,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package usecase
 
 import (
-	"fmt"
-	"time"
-
-	"github.com/frankrap/bybit-api/rest"
-
 	"github.com/rluisr/tvbit-bot/pkg/domain"
 	"github.com/rluisr/tvbit-bot/pkg/usecase/interfaces"
-	"golang.org/x/sync/errgroup"
 )
 
 type TVInteractor struct {
@@ -34,31 +28,12 @@ type TVInteractor struct {
 	BybitRepository interfaces.BybitRepository
 }
 
-func (i *TVInteractor) CreateOrder(req domain.TV) (domain.TVOrderResponse, error) {
+func (i *TVInteractor) CreateOrder(req domain.Order) (domain.TVOrderResponse, error) {
 	var (
-		err       error
-		setting   *domain.Setting
-		positions *[]rest.LinearPosition
+		err error
 	)
 
-	eg := errgroup.Group{}
-	eg.Go(func() error {
-		setting, err = i.TVRepository.GetSetting(req.APIKey, req.APISecretKey)
-		return err
-	})
-	eg.Go(func() error {
-		positions, err = i.BybitRepository.GetPositions(req.Order.Symbol)
-		return err
-	})
-	eg.Go(func() error {
-		req.Order.TP, err = i.BybitRepository.CalculateTPSL(req, req.Order.TP, "TP")
-		return err
-	})
-	eg.Go(func() error {
-		req.Order.SL, err = i.BybitRepository.CalculateTPSL(req, req.Order.SL, "SL")
-		return err
-	})
-	err = eg.Wait()
+	req.TP, err = i.BybitRepository.CalculateTPSL(req, req.TP, "TP")
 	if err != nil {
 		return domain.TVOrderResponse{
 			Success: false,
@@ -67,16 +42,7 @@ func (i *TVInteractor) CreateOrder(req domain.TV) (domain.TVOrderResponse, error
 		}, err
 	}
 
-	activeOrder := i.BybitRepository.GetActiveOrderCount(&req, positions)
-	if setting.MaxPosition.Valid && setting.MaxPosition.Int32 <= int32(activeOrder) {
-		return domain.TVOrderResponse{
-			Success: false,
-			Reason:  fmt.Errorf("your setting max_position is %d and a count of current active position is %d. your order is cancelled", setting.MaxPosition.Int32, activeOrder).Error(),
-			Order:   nil,
-		}, nil
-	}
-
-	orderID, err := i.BybitRepository.CreateOrder(req)
+	req.SL, err = i.BybitRepository.CalculateTPSL(req, req.SL, "SL")
 	if err != nil {
 		return domain.TVOrderResponse{
 			Success: false,
@@ -85,26 +51,32 @@ func (i *TVInteractor) CreateOrder(req domain.TV) (domain.TVOrderResponse, error
 		}, err
 	}
 
-	// Wait for ByBit server side reflection
-	time.Sleep(5 * time.Second)
-
-	err = i.BybitRepository.FetchOrder(&req, orderID)
+	err = i.BybitRepository.CreateOrder(&req)
 	if err != nil {
 		return domain.TVOrderResponse{
 			Success: false,
 			Reason:  err.Error(),
-			Order:   &req.Order,
+			Order:   nil,
 		}, err
 	}
 
-	err = i.TVRepository.SaveOrder(req, &req.Order)
+	err = i.BybitRepository.FetchOrder(&req)
 	if err != nil {
 		return domain.TVOrderResponse{
 			Success: false,
 			Reason:  err.Error(),
-			Order:   &req.Order,
+			Order:   &req,
 		}, err
 	}
 
-	return domain.TVOrderResponse{Success: true, Order: &req.Order}, nil
+	err = i.TVRepository.SaveOrder(&req)
+	if err != nil {
+		return domain.TVOrderResponse{
+			Success: false,
+			Reason:  err.Error(),
+			Order:   &req,
+		}, err
+	}
+
+	return domain.TVOrderResponse{Success: true, Order: &req}, nil
 }

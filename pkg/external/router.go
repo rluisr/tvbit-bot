@@ -49,10 +49,6 @@ func Run() {
 	tv.GET("", func(c *gin.Context) { c.Redirect(http.StatusPermanentRedirect, "/") })
 	tv.POST("", func(c *gin.Context) { tvController.Handle(c) })
 
-	setting := r.Group("/setting")
-	setting.GET("", func(c *gin.Context) { settingController.Get(c) })
-	setting.PUT("", func(c *gin.Context) { settingController.Set(c) })
-
 	var addr string
 	if os.Getenv("SERVER_ENV") == "local" {
 		r.Use(gin.Logger())
@@ -65,8 +61,9 @@ func Run() {
 	}
 
 	srv := &http.Server{
-		Addr:    addr,
-		Handler: r,
+		Addr:              addr,
+		Handler:           r,
+		ReadHeaderTimeout: 100 * time.Millisecond,
 	}
 
 	go func() {
@@ -86,5 +83,4 @@ func Run() {
 	}
 	defer cancel()
 	log.Println("Server exiting")
-	os.Exit(0)
 }

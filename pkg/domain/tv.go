@@ -23,40 +23,24 @@ import (
 	"gorm.io/gorm"
 )
 
-type TV struct {
-	IsTestNet    bool    `json:"is_test_net"`
-	APIKey       string  `json:"api_key" binding:"required"`
-	APISecretKey string  `json:"api_secret_key" binding:"required"`
-	Order        TVOrder `json:"order"`
-}
-
-type TVOrder struct {
+type Order struct {
 	gorm.Model
 	Name       string          `gorm:"type:varchar(255);default:null" json:"name"` // alert name, description or something
 	CEX        string          `gorm:"type:varchar(255);not null" json:"-"`
-	SettingID  uint64          `gorm:"type:uint;not null" json:"-"`
 	OrderID    string          `gorm:"type:varchar(255);uniqueIndex:order_id;not null"`
 	Type       string          `gorm:"type:varchar(255)" json:"type" binding:"required"`   // "Market" or "Limit"
 	Symbol     string          `gorm:"type:varchar(255)" json:"symbol" binding:"required"` // eg: BTCUSDT
 	Side       string          `gorm:"type:varchar(255)" json:"side" binding:"required"`   // "Buy" or "Sell"
-	Price      float64         `gorm:"-" json:"price"`                                     // Set 0 if order_type is Market
+	Price      string          `gorm:"-" json:"price"`                                     // Set 0 if order_type is Market
 	EntryPrice decimal.Decimal `gorm:"type:decimal(10,4)" json:"-"`
-	QTY        float64         `gorm:"type:float" json:"qty" binding:"required"`
-	TP         interface{}     `gorm:"type:float" json:"tp"`
-	SL         interface{}     `gorm:"type:float" json:"sl"`
+	QTY        string          `gorm:"type:float" json:"qty" binding:"required"`
+	TP         string          `gorm:"type:float" json:"tp"`
+	SL         string          `gorm:"type:float" json:"sl"`
 	PL         decimal.Decimal `gorm:"type:decimal(10,4)" json:"-"`
 }
 
-type Tabler interface {
-	TableName() string
-}
-
-func (TVOrder) TableName() string {
-	return "orders"
-}
-
 type TVOrderResponse struct {
-	Success bool     `json:"successful" binding:"required"`
-	Reason  string   `json:"reason,omitempty" binding:"required"`
-	Order   *TVOrder `json:"order"`
+	Success bool   `json:"successful" binding:"required"`
+	Reason  string `json:"reason,omitempty" binding:"required"`
+	Order   *Order `json:"order"`
 }

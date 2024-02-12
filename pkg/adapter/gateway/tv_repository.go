@@ -19,9 +19,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package gateway
 
 import (
-	"errors"
-	"fmt"
-
 	"github.com/rluisr/tvbit-bot/pkg/domain"
 	"gorm.io/gorm"
 )
@@ -33,51 +30,15 @@ type (
 	}
 )
 
-func (r *TVRepository) UpdateOrder(order *domain.TVOrder) error {
+func (r *TVRepository) UpdateOrder(order *domain.Order) error {
 	return r.RWDB.Save(&order).Error
 }
 
-func (r *TVRepository) SaveOrder(req domain.TV, order *domain.TVOrder) error {
-	var setting domain.Setting
-	err := r.RODB.Where("api_key = ? AND api_secret_key = ?", req.APIKey, req.APISecretKey).First(&setting).Error
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return fmt.Errorf("failed SaveOrder user is not found in setting table")
-		} else {
-			return err
-		}
-	}
-	order.CEX = "bybit" // TODO we should support any other CEX
-	order.SettingID = setting.ID
+func (r *TVRepository) SaveOrder(order *domain.Order) error {
+	order.CEX = "bybit"
 	return r.RWDB.Save(order).Error
-}
-
-func (r *TVRepository) GetSetting(apiKey, apiSecretKey string) (*domain.Setting, error) {
-	var setting domain.Setting
-	err := r.RODB.Where("api_key = ? AND api_secret_key = ?", apiKey, apiSecretKey).Take(&setting).Error
-	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil, err
-	}
-
-	return &setting, nil
-}
-
-func (r *TVRepository) GetSettings() ([]domain.Setting, error) {
-	var settings []domain.Setting
-	err := r.RODB.Find(&settings).Error
-	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil, err
-	}
-
-	return settings, nil
 }
 
 func (r *TVRepository) SaveWalletHistories(histories []domain.WalletHistory) error {
 	return r.RWDB.Create(&histories).Error
-}
-
-func (r *TVRepository) GetPLNullOrders(settingID uint64) (*[]domain.TVOrder, error) {
-	var orders []domain.TVOrder
-	err := r.RODB.Where("setting_id = ? AND (pl IS NULL OR pl = 0)", settingID).Order("id desc").Find(&orders).Error
-	return &orders, err
 }

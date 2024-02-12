@@ -18,16 +18,18 @@
  * /
  */
 
-package domain
+package utils
 
-import (
-	"github.com/shopspring/decimal"
-	"gorm.io/gorm"
-)
+import "strconv"
 
-type WalletHistory struct {
-	gorm.Model
-	Type     string          `gorm:"not null;comment: spot/usdc/futures etc"`
-	Balance  decimal.Decimal `gorm:"type:decimal(10,4);not null"`
-	TotalRPL decimal.Decimal `gorm:"type:decimal(10,4);not null"`
+func StringToFloat64(str string) float64 {
+	f, err := strconv.ParseFloat(str, 64)
+	if err != nil {
+		panic(err)
+	}
+	return f
+}
+
+func Float64ToString(f float64) string {
+	return strconv.FormatFloat(f, 'f', -1, 64)
 }
