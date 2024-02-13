@@ -28,6 +28,7 @@ type (
 func (r *BybitRepository) CreateOrder(req *domain.Order) error {
 	orderParam := bybit.V5CreateOrderParam{
 		Category:   bybit.CategoryV5Linear,
+		OrderType:  bybit.OrderTypeMarket,
 		Symbol:     bybit.SymbolV5(req.Symbol),
 		Qty:        req.QTY,
 		TakeProfit: &req.TP,
@@ -38,9 +39,6 @@ func (r *BybitRepository) CreateOrder(req *domain.Order) error {
 	if req.Type == "Limit" {
 		orderParam.OrderType = bybit.OrderTypeLimit
 		orderParam.Price = &req.Price
-	}
-	if req.Type == "Market" {
-		orderParam.OrderType = bybit.OrderTypeMarket
 	}
 
 	if req.Side == "Buy" {
@@ -95,24 +93,36 @@ func (r *BybitRepository) FetchOrder(req *domain.Order) error {
 	return nil
 }
 
-func (r *BybitRepository) CalculateTPSL(req domain.Order, value, isType string) (string, error) {
-	if value == "" || value == "0" {
-		return "0", nil
-	}
-
+// CalculateTPSL returns TP and SL
+// "tp" and "sl" are not allowed to be 0 or not specified.
+func (r *BybitRepository) CalculateTPSL(req *domain.Order) error {
+	// INFO: テストネットとメインでは価格差が大きく、テストネットで注文を行う際に TP/SL の範囲外になる可能性があり、注文が失敗することがある
 	currentPrice, err := r.getPrice(req.Symbol)
 	if err != nil {
-		return "0", err
+		return err
 	}
 
-	if strings.Contains(value, "%") {
-		return r.calculateTPSLByPercentage(req, value, isType, currentPrice)
+	var (
+		tp string
+		sl string
+	)
+
+	if strings.Contains(req.TP, "%") {
+		tp, sl, err = r.calculateTPSLByPercentage(req, currentPrice)
+	} else {
+		tp, sl, err = r.calculateTPSLByFixedPrice(req, currentPrice)
+	}
+	if err != nil {
+		return err
 	}
 
-	return r.calculateTPSLByFixedPrice(req, value, currentPrice)
+	req.TP = tp
+	req.SL = sl
+
+	return nil
 }
 
-func (r *BybitRepository) calculateTPSLByPercentage(req domain.Order, value, isType string, currentPrice float64) (string, error) {
+func (r *BybitRepository) calculateTPSLByPercentage(req *domain.Order, currentPrice float64) (tp string, sl string, err error) {
 	var price float64
 	if req.Price == "0" {
 		price = currentPrice
@@ -120,56 +130,83 @@ func (r *BybitRepository) calculateTPSLByPercentage(req domain.Order, value, isT
 		price = utils.StringToFloat64(req.Price)
 	}
 
-	tpslStr := strings.Replace(value, "%", "", 1)
-	tpsl, err := strconv.ParseFloat(tpslStr, 64)
+	tpStr := strings.Replace(req.TP, "%", "", 1)
+	tpF64, err := strconv.ParseFloat(tpStr, 64)
 	if err != nil {
-		return "0", errors.New("failed to parse to float64 " + tpslStr)
+		return "0", "0", errors.New("failed to parse to float64 " + tpStr)
 	}
-	tpsl *= 0.1
+	tpF64 *= 0.1
+
+	slStr := strings.Replace(req.SL, "%", "", 1)
+	slF64, err := strconv.ParseFloat(slStr, 64)
+	if err != nil {
+		return "0", "0", errors.New("failed to parse to float64 " + slStr)
+	}
+	slF64 *= 0.1
 
 	qtyF64 := utils.StringToFloat64(req.QTY)
 
 	switch req.Side {
 	case "Buy":
-		if isType == "TP" {
-			return utils.Float64ToString((price * tpsl * qtyF64) + price), nil
-		}
-		return utils.Float64ToString(math.Abs((price * tpsl * qtyF64) - price)), nil
+		tp = utils.Float64ToString((price * tpF64 * qtyF64) + price)
+		sl = utils.Float64ToString(math.Abs((price * slF64 * qtyF64) - price))
 	case "Sell":
-		if isType == "SL" {
-			return utils.Float64ToString((price * tpsl * qtyF64) + price), nil
-		}
-		return utils.Float64ToString(math.Abs((price * tpsl * qtyF64) - price)), nil
+		tp = utils.Float64ToString(math.Abs((price * tpF64 * qtyF64) - price))
+		sl = utils.Float64ToString((price * slF64 * qtyF64) + price)
 	default:
-		return "0", errors.New("unknown request / isType: " + isType)
+		return "0", "0", errors.New("invalid side")
 	}
+
+	return tp, sl, nil
 }
 
-func (r *BybitRepository) calculateTPSLByFixedPrice(req domain.Order, value string, currentPrice float64) (string, error) {
+// calculateTPSLByFixedPrice returns TP and SL
+// req.TP contains "+" or "-" and a number (e.g. "+100", "-100")
+// it means the price difference from the current price
+func (r *BybitRepository) calculateTPSLByFixedPrice(req *domain.Order, currentPrice float64) (tp string, sl string, err error) {
 	var inputPrice float64
-	var err error
 
+	// TP
 	switch {
-	case strings.Contains(value, "+"):
-		inputPriceString := strings.Replace(value, "+", "", 1)
-		inputPrice, err = strconv.ParseFloat(inputPriceString, 64)
+	case strings.Contains(req.TP, "+"):
+		inputPriceStr := strings.Replace(req.TP, "+", "", 1)
+		inputPrice, err = strconv.ParseFloat(inputPriceStr, 64)
 		if err != nil {
-			return "0", errors.New("convert string to float err " + err.Error())
+			return "0", "0", err
 		}
-	case strings.Contains(value, "-"):
-		inputPriceString := strings.Replace(value, "-", "", 1)
-		inputPrice, err = strconv.ParseFloat(inputPriceString, 64)
+		tp = utils.Float64ToString(currentPrice + inputPrice)
+	case strings.Contains(req.TP, "-"):
+		inputPriceStr := strings.Replace(req.TP, "-", "", 1)
+		inputPrice, err = strconv.ParseFloat(inputPriceStr, 64)
 		if err != nil {
-			return "0", errors.New("convert string to float err " + err.Error())
+			return "0", "0", err
 		}
+		tp = utils.Float64ToString(currentPrice - inputPrice)
 	default:
-		return value, nil
+		tp = req.TP
 	}
 
-	if req.Side == "Sell" {
-		return utils.Float64ToString(currentPrice + inputPrice), nil
+	// SL
+	switch {
+	case strings.Contains(req.SL, "+"):
+		inputPriceStr := strings.Replace(req.SL, "+", "", 1)
+		inputPrice, err = strconv.ParseFloat(inputPriceStr, 64)
+		if err != nil {
+			return "0", "0", err
+		}
+		sl = utils.Float64ToString(currentPrice + inputPrice)
+	case strings.Contains(req.SL, "-"):
+		inputPriceStr := strings.Replace(req.SL, "-", "", 1)
+		inputPrice, err = strconv.ParseFloat(inputPriceStr, 64)
+		if err != nil {
+			return "0", "0", err
+		}
+		sl = utils.Float64ToString(currentPrice - inputPrice)
+	default:
+		sl = req.SL
 	}
-	return utils.Float64ToString(currentPrice - inputPrice), nil
+
+	return tp, sl, nil
 }
 
 // getPrice returns index price

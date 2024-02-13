@@ -18,34 +18,19 @@
  * /
  */
 
-package external
+package logging
 
-import (
-	"github.com/rluisr/tvbit-bot/pkg/adapter/controllers"
-	tvbitBybit "github.com/rluisr/tvbit-bot/pkg/external/bybit"
-	"github.com/rluisr/tvbit-bot/pkg/external/logging"
-	"github.com/rluisr/tvbit-bot/pkg/external/mysql"
-)
+import "github.com/Netflix/go-env"
 
-var (
-	tvController *controllers.TVController
-)
+type Config struct {
+	LokiBasicPass string `env:"LOKI_BASIC_PASS"`
+	LokiBasicUser string `env:"LOKI_BASIC_USER"`
+	LokiURL       string `env:"LOKI_URL"`
+}
 
-func Init() (err error) {
-	log, err := logging.New()
-	if err != nil {
-		return err
-	}
+func NewConfig() (*Config, error) {
+	var config Config
 
-	rwDB, roDB, err := mysql.Connect()
-	if err != nil {
-		return err
-	}
-
-	httpClient := NewHTTPClient()
-	bybitClient := tvbitBybit.Init(httpClient)
-
-	tvController = controllers.NewTVController(log, rwDB, roDB, bybitClient)
-
-	return nil
+	_, err := env.UnmarshalFromEnviron(&config)
+	return &config, err
 }

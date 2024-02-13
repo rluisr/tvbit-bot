@@ -20,9 +20,11 @@ package interfaces
 
 import (
 	"github.com/rluisr/tvbit-bot/pkg/domain"
+	"github.com/rluisr/tvbit-bot/pkg/external/logging"
 )
 
 type TVRepository interface {
+	Logging() *logging.Logging
 	SaveOrder(*domain.Order) error
 	UpdateOrder(*domain.Order) error
 	SaveWalletHistories([]domain.WalletHistory) error
@@ -31,6 +33,6 @@ type TVRepository interface {
 type BybitRepository interface {
 	CreateOrder(*domain.Order) error
 	FetchOrder(*domain.Order) error
-	CalculateTPSL(order domain.Order, value, isType string) (string, error)
+	CalculateTPSL(*domain.Order) error
 	GetWalletBalance() (float64, error)
 }

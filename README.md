@@ -35,7 +35,7 @@ more details, see [curl.txt](example/curl.txt)
 
 ### TP and SL
 
-You need to set `tp` and `sl` as a string.
+You have to set `tp` and `sl` as a string.
 
 - `{{high}}` is an embedded value of TradingView, Also you can set any other TradingView's embedded values.
 - Other methods, you can set as a percent like `"tp": "10%"` calculate from mark price.

@@ -20,6 +20,7 @@ package gateway
 
 import (
 	"github.com/rluisr/tvbit-bot/pkg/domain"
+	"github.com/rluisr/tvbit-bot/pkg/external/logging"
 	"gorm.io/gorm"
 )
 
@@ -27,8 +28,13 @@ type (
 	TVRepository struct {
 		RWDB *gorm.DB
 		RODB *gorm.DB
+		Log  *logging.Logging
 	}
 )
+
+func (r *TVRepository) Logging() *logging.Logging {
+	return r.Log
+}
 
 func (r *TVRepository) UpdateOrder(order *domain.Order) error {
 	return r.RWDB.Save(&order).Error

@@ -18,8 +18,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package controllers
 
-import "log"
-
 type Error struct {
 	Code    int    `json:"code"`
 	Message string `json:"message"`
@@ -32,8 +30,6 @@ func NewError(code int, err error) *Error {
 		Message: err.Error(),
 		Error:   err,
 	}
-
-	log.Printf("err: %+v\n", newErr)
 
 	return newErr
 }

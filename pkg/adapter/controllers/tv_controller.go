@@ -24,7 +24,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/hirokisan/bybit/v2"
 	"github.com/rluisr/tvbit-bot/pkg/adapter/gateway"
-	"github.com/rluisr/tvbit-bot/pkg/domain"
+	"github.com/rluisr/tvbit-bot/pkg/external/logging"
 	"github.com/rluisr/tvbit-bot/pkg/usecase"
 	"gorm.io/gorm"
 )
@@ -33,12 +33,13 @@ type TVController struct {
 	Interactor usecase.TVInteractor
 }
 
-func NewTVController(rwDB, roDB *gorm.DB, bybitClient *bybit.Client) *TVController {
+func NewTVController(log *logging.Logging, rwDB, roDB *gorm.DB, bybitClient *bybit.Client) *TVController {
 	return &TVController{
 		Interactor: usecase.TVInteractor{
 			TVRepository: &gateway.TVRepository{
 				RWDB: rwDB,
 				RODB: roDB,
+				Log:  log,
 			},
 			BybitRepository: &gateway.BybitRepository{
 				Client: bybitClient,
@@ -48,16 +49,10 @@ func NewTVController(rwDB, roDB *gorm.DB, bybitClient *bybit.Client) *TVControll
 }
 
 func (controller *TVController) Handle(c *gin.Context) {
-	var req domain.Order
-	err := c.ShouldBindJSON(&req)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, NewError(http.StatusBadRequest, err))
-		return
-	}
-
-	order, err := controller.Interactor.CreateOrder(req)
+	order, err := controller.Interactor.CreateOrder(c)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, NewError(http.StatusInternalServerError, err))
+		controller.Interactor.TVRepository.Logging().Error("CreateOrder", err.Error(), err)
 		return
 	}
 

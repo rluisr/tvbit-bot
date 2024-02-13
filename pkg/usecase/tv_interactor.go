@@ -19,6 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package usecase
 
 import (
+	"github.com/gin-gonic/gin"
 	"github.com/rluisr/tvbit-bot/pkg/domain"
 	"github.com/rluisr/tvbit-bot/pkg/usecase/interfaces"
 )
@@ -28,12 +29,9 @@ type TVInteractor struct {
 	BybitRepository interfaces.BybitRepository
 }
 
-func (i *TVInteractor) CreateOrder(req domain.Order) (domain.TVOrderResponse, error) {
-	var (
-		err error
-	)
-
-	req.TP, err = i.BybitRepository.CalculateTPSL(req, req.TP, "TP")
+func (i *TVInteractor) CreateOrder(c *gin.Context) (domain.TVOrderResponse, error) {
+	var req domain.Order
+	err := c.ShouldBindJSON(&req)
 	if err != nil {
 		return domain.TVOrderResponse{
 			Success: false,
@@ -42,7 +40,7 @@ func (i *TVInteractor) CreateOrder(req domain.Order) (domain.TVOrderResponse, er
 		}, err
 	}
 
-	req.SL, err = i.BybitRepository.CalculateTPSL(req, req.SL, "SL")
+	err = i.BybitRepository.CalculateTPSL(&req)
 	if err != nil {
 		return domain.TVOrderResponse{
 			Success: false,

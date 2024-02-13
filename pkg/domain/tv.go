@@ -34,8 +34,8 @@ type Order struct {
 	Price      string          `gorm:"-" json:"price"`                                     // Set 0 if order_type is Market
 	EntryPrice decimal.Decimal `gorm:"type:decimal(10,4)" json:"-"`
 	QTY        string          `gorm:"type:float" json:"qty" binding:"required"`
-	TP         string          `gorm:"type:float" json:"tp"`
-	SL         string          `gorm:"type:float" json:"sl"`
+	TP         string          `gorm:"type:float" json:"tp" binding:"required"`
+	SL         string          `gorm:"type:float" json:"sl" binding:"required"`
 	PL         decimal.Decimal `gorm:"type:decimal(10,4)" json:"-"`
 }
 
