@@ -19,6 +19,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package usecase
 
 import (
+	"fmt"
+
 	"github.com/gin-gonic/gin"
 	"github.com/rluisr/tvbit-bot/pkg/domain"
 	"github.com/rluisr/tvbit-bot/pkg/usecase/interfaces"
@@ -75,6 +77,8 @@ func (i *TVInteractor) CreateOrder(c *gin.Context) (domain.TVOrderResponse, erro
 			Order:   &req,
 		}, err
 	}
+
+	i.TVRepository.Logging().Info(fmt.Sprintf("created order: %+v", req))
 
 	return domain.TVOrderResponse{Success: true, Order: &req}, nil
 }
