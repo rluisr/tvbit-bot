@@ -21,21 +21,66 @@
 package external
 
 import (
+	"context"
+
 	"github.com/rluisr/tvbit-bot/pkg/adapter/controllers"
 	tvbitBybit "github.com/rluisr/tvbit-bot/pkg/external/bybit"
 	"github.com/rluisr/tvbit-bot/pkg/external/logging"
 	"github.com/rluisr/tvbit-bot/pkg/external/mysql"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
+	otelresource "go.opentelemetry.io/otel/sdk/resource"
+	oteltrace "go.opentelemetry.io/otel/sdk/trace"
+	semconv "go.opentelemetry.io/otel/semconv/v1.24.0"
 )
 
 var (
 	tvController *controllers.TVController
 )
 
-func Init() (err error) {
-	log, err := logging.New()
+// OTLP Exporter
+func newOTLPExporter(ctx context.Context) (oteltrace.SpanExporter, error) {
+	// Change default HTTPS -> HTTP
+	insecureOpt := otlptracehttp.WithInsecure()
+	return otlptracehttp.New(ctx, insecureOpt)
+}
+
+// TracerProvider is an OpenTelemetry TracerProvider.
+// It provides Tracers to instrumentation so it can trace operational flow through a system.
+func newTraceProvider(serviceName string, exp oteltrace.SpanExporter) *oteltrace.TracerProvider {
+	// Ensure default SDK resources and the required service name are set.
+	r, err := otelresource.Merge(
+		otelresource.Default(),
+		otelresource.NewWithAttributes(
+			semconv.SchemaURL,
+			semconv.ServiceName(serviceName),
+		),
+	)
+
+	if err != nil {
+		panic(err)
+	}
+
+	return oteltrace.NewTracerProvider(
+		oteltrace.WithBatcher(exp),
+		oteltrace.WithResource(r),
+	)
+}
+
+func Init(source string) (err error) {
+	log, err := logging.New(source)
 	if err != nil {
 		return err
 	}
+
+	ctx := context.Background()
+	exp, err := newOTLPExporter(ctx)
+	if err != nil {
+		return err
+	}
+	tp := newTraceProvider(source, exp) // logger for middleware
+
+	otel.SetTracerProvider(tp)
 
 	rwDB, roDB, err := mysql.Connect()
 	if err != nil {

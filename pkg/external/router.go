@@ -27,14 +27,18 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
 )
 
 var (
 	version string
 )
 
-func Run() {
+func Run(serviceName string) {
 	r := gin.Default()
+	r.Use(otelgin.Middleware(serviceName, otelgin.WithFilter(func(req *http.Request) bool {
+		return req.URL.Path != "/"
+	})))
 	r.ForwardedByClientIP = true
 
 	r.GET("/", func(c *gin.Context) {

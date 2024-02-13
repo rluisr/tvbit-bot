@@ -10,6 +10,7 @@ import (
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
+	gormTracing "gorm.io/plugin/opentelemetry/tracing"
 )
 
 var (
@@ -87,6 +88,15 @@ func Connect() (*gorm.DB, *gorm.DB, error) {
 	roSQL.SetMaxIdleConns(DBMaxIdleConn)
 	roSQL.SetConnMaxLifetime(DBMaxLifeTime)
 	err = roSQL.Ping()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	err = rwDB.Use(gormTracing.NewPlugin())
+	if err != nil {
+		return nil, nil, err
+	}
+	err = roDB.Use(gormTracing.NewPlugin())
 	if err != nil {
 		return nil, nil, err
 	}

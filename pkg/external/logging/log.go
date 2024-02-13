@@ -29,7 +29,6 @@ import (
 )
 
 const (
-	SOURCE   = "tvbit-bot"
 	envLocal = "local"
 )
 
@@ -37,14 +36,14 @@ type Logging struct {
 	Log promtail.Client
 }
 
-func New() (*Logging, error) {
+func New(source string) (*Logging, error) {
 	config, err := NewConfig()
 	if err != nil {
 		panic(fmt.Errorf("logging.NewConfig err: %w", err))
 	}
 
 	identifiers := map[string]string{
-		"source": SOURCE,
+		"source": source,
 	}
 
 	promtailClient, err := promtail.NewJSONv1Client(config.LokiURL, identifiers, promtail.WithBasicAuth(config.LokiBasicUser, config.LokiBasicPass))

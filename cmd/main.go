@@ -25,13 +25,17 @@ import (
 	"github.com/rluisr/tvbit-bot/pkg/external/mysql"
 )
 
+const (
+	SOURCE = "tvbit-bot"
+)
+
 func main() {
 	defer mysql.CloseConn()
 
-	err := external.Init()
+	err := external.Init(SOURCE)
 	if err != nil {
 		panic(fmt.Errorf("failed to initialization %w", err))
 	}
 
-	external.Run()
+	external.Run(SOURCE)
 }
