@@ -3,7 +3,6 @@ package gateway
 import (
 	"errors"
 	"fmt"
-	"math"
 	"net/http"
 	"strconv"
 	"strings"
@@ -123,36 +122,27 @@ func (r *BybitRepository) CalculateTPSL(req *domain.Order) error {
 }
 
 func (r *BybitRepository) calculateTPSLByPercentage(req *domain.Order, currentPrice float64) (tp string, sl string, err error) {
-	var price float64
-	if req.Price == "0" {
-		price = currentPrice
-	} else {
-		price = utils.StringToFloat64(req.Price)
-	}
-
 	tpStr := strings.Replace(req.TP, "%", "", 1)
 	tpF64, err := strconv.ParseFloat(tpStr, 64)
 	if err != nil {
 		return "0", "0", errors.New("failed to parse to float64 " + tpStr)
 	}
-	tpF64 *= 0.1
+	tpF64 /= 100 // パーセンテージを小数に変換
 
 	slStr := strings.Replace(req.SL, "%", "", 1)
 	slF64, err := strconv.ParseFloat(slStr, 64)
 	if err != nil {
 		return "0", "0", errors.New("failed to parse to float64 " + slStr)
 	}
-	slF64 *= 0.1
-
-	qtyF64 := utils.StringToFloat64(req.QTY)
+	slF64 /= 100 // パーセンテージを小数に変換
 
 	switch req.Side {
 	case "Buy":
-		tp = utils.Float64ToString((price * tpF64 * qtyF64) + price)
-		sl = utils.Float64ToString(math.Abs((price * slF64 * qtyF64) - price))
+		tp = utils.Float64ToString(currentPrice * (1 + tpF64)) // 現在価格にn%を加える
+		sl = utils.Float64ToString(currentPrice * (1 - slF64)) // 現在価格からn%を引く
 	case "Sell":
-		tp = utils.Float64ToString(math.Abs((price * tpF64 * qtyF64) - price))
-		sl = utils.Float64ToString((price * slF64 * qtyF64) + price)
+		tp = utils.Float64ToString(currentPrice * (1 - tpF64)) // 現在価格からn%を引く
+		sl = utils.Float64ToString(currentPrice * (1 + slF64)) // 現在価格にn%を加える
 	default:
 		return "0", "0", errors.New("invalid side")
 	}
