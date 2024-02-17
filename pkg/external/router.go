@@ -30,10 +30,6 @@ import (
 	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
 )
 
-var (
-	version string
-)
-
 func Run(serviceName string) {
 	r := gin.Default()
 	r.Use(otelgin.Middleware(serviceName, otelgin.WithFilter(func(req *http.Request) bool {
@@ -43,9 +39,8 @@ func Run(serviceName string) {
 
 	r.GET("/", func(c *gin.Context) {
 		c.JSON(http.StatusOK, map[string]string{
-			"version": version,
-			"repo":    "https://github.com/rluisr/tvbit-bot",
-			"owner":   "rluisr / rarirureluis",
+			"repo":  "https://github.com/rluisr/tvbit-bot",
+			"owner": "rluisr / rarirureluis",
 		})
 	})
 
