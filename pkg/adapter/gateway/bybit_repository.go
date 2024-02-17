@@ -36,11 +36,12 @@ func (r *BybitRepository) CreateOrder(req *domain.Order) error {
 	}
 
 	if req.Type == "Limit" {
-		tif := bybit.TimeInForceImmediateOrCancel
+		// 10001, timeInForce invalid
+		// tif := bybit.TimeInForceImmediateOrCancel
+		// orderParam.TimeInForce = &tif
 
 		orderParam.OrderType = bybit.OrderTypeLimit
 		orderParam.Price = &req.Price
-		orderParam.TimeInForce = &tif
 	}
 
 	if req.Side == "Buy" {
@@ -58,6 +59,16 @@ func (r *BybitRepository) CreateOrder(req *domain.Order) error {
 	req.OrderID = resp.Result.OrderID
 
 	return nil
+}
+
+func (r *BybitRepository) CancelOrder(req *domain.Order) error {
+	_, err := r.Client.V5().Order().CancelOrder(bybit.V5CancelOrderParam{
+		Category: bybit.CategoryV5Linear,
+		Symbol:   bybit.SymbolV5(req.Symbol),
+		OrderID:  &req.OrderID,
+	})
+
+	return err
 }
 
 func (r *BybitRepository) FetchOpenOrder(req *domain.Order) error {
@@ -100,6 +111,17 @@ func (r *BybitRepository) FetchOpenOrder(req *domain.Order) error {
 	}
 
 	return nil
+}
+
+func (r *BybitRepository) GetOpenOrders() (*bybit.V5GetOrdersResponse, error) {
+	orders, err := r.Client.V5().Order().GetOpenOrders(bybit.V5GetOpenOrdersParam{
+		Category: bybit.CategoryV5Linear,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed GetOpenOrders: %w", err)
+	}
+
+	return orders, nil
 }
 
 func (r *BybitRepository) GetClosedPNL(param bybit.V5GetClosedPnLParam) (*bybit.V5GetClosedPnLResponse, error) {

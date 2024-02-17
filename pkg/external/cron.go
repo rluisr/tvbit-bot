@@ -21,6 +21,8 @@
 package external
 
 import (
+	"time"
+
 	"github.com/go-co-op/gocron/v2"
 )
 
@@ -32,13 +34,29 @@ func Cron() {
 	defer s.Shutdown() //nolint:errcheck // ignore error
 
 	_, err = s.NewJob(
-		gocron.CronJob("0 0 * * * ?", true),
+		gocron.CronJob("0 * * * *", false),
 		gocron.NewTask(func() {
 			foErr := tvController.FetchOrder()
 			if foErr != nil {
 				tvController.Interactor.TVRepository.Logging().Error("FetchOrder", foErr.Error(), foErr)
+				return
 			}
 			tvController.Interactor.TVRepository.Logging().Info("FetchOrder is done")
+		}),
+	)
+	if err != nil {
+		tvController.Interactor.TVRepository.Logging().Error("NewJob: FetchOrder", err.Error(), err)
+	}
+
+	_, err = s.NewJob(
+		gocron.CronJob("* * * * *", false),
+		gocron.NewTask(func() {
+			icErr := tvController.InventoryCheck(5 * time.Minute)
+			if icErr != nil {
+				tvController.Interactor.TVRepository.Logging().Error("InventoryCheck", icErr.Error(), icErr)
+				return
+			}
+			tvController.Interactor.TVRepository.Logging().Info("InventoryCheck is done")
 		}),
 	)
 	if err != nil {

@@ -20,6 +20,7 @@ package controllers
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/hirokisan/bybit/v2"
@@ -62,4 +63,8 @@ func (controller *TVController) Handle(c *gin.Context) {
 // FetchOrder は PL が 0 のままになっている注文の PL を取得する
 func (controller *TVController) FetchOrder() error {
 	return controller.Interactor.FetchPL()
+}
+
+func (controller *TVController) InventoryCheck(cancelAfter time.Duration) error {
+	return controller.Interactor.InventoryCheck(cancelAfter)
 }

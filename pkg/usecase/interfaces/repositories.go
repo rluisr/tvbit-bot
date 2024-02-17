@@ -35,7 +35,9 @@ type TVRepository interface {
 
 type BybitRepository interface {
 	CreateOrder(*domain.Order) error
+	CancelOrder(req *domain.Order) error
 	FetchOpenOrder(*domain.Order) error
+	GetOpenOrders() (*bybit.V5GetOrdersResponse, error)
 	GetClosedPNL(param bybit.V5GetClosedPnLParam) (*bybit.V5GetClosedPnLResponse, error)
 	CalculateTPSL(*domain.Order) error
 	GetWalletBalance() (float64, error)

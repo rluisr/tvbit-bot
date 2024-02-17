@@ -20,6 +20,7 @@ package usecase
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/hirokisan/bybit/v2"
@@ -204,4 +205,35 @@ func (i *TVInteractor) FetchPL() error {
 	}
 
 	return i.TVRepository.SaveClosedPnL(closedPnLs)
+}
+
+// InventoryCheck は約定していない注文で、n分経過したものをキャンセルする
+func (i *TVInteractor) InventoryCheck(cancelAfter time.Duration) error {
+	orders, err := i.BybitRepository.GetOpenOrders()
+	if err != nil {
+		return err
+	}
+
+	for _, order := range orders.Result.List {
+		if order.OrderStatus == bybit.OrderStatusUntriggered {
+			createdAt, cErr := utils.TimestampMSToTime(order.CreatedTime)
+			if cErr != nil {
+				return cErr
+			}
+
+			if createdAt.Add(cancelAfter).Before(time.Now()) {
+				err = i.BybitRepository.CancelOrder(&domain.Order{
+					OrderID: order.OrderID,
+					Symbol:  string(order.Symbol),
+				})
+				if err != nil {
+					return err
+				}
+
+				i.TVRepository.Logging().Info(fmt.Sprintf("canceled order: %+v", order))
+			}
+		}
+	}
+
+	return nil
 }
