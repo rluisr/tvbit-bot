@@ -55,3 +55,7 @@ func (r *TVRepository) GetUniqueSymbol() ([]string, error) {
 	err := r.RODB.Model(&domain.Order{}).Distinct("symbol").Find(&symbols).Error
 	return symbols, err
 }
+
+func (r *TVRepository) TruncateClosedPnL() error {
+	return r.RWDB.Exec("TRUNCATE closed_pnl;").Error
+}

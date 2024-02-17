@@ -87,6 +87,12 @@ func (i *TVInteractor) CreateOrder(c *gin.Context) (domain.TVOrderResponse, erro
 }
 
 func (i *TVInteractor) FetchPL() error {
+	// TODO TRUNCATE せずに増分更新する
+	err := i.TVRepository.TruncateClosedPnL()
+	if err != nil {
+		return err
+	}
+
 	symbols, err := i.TVRepository.GetUniqueSymbol()
 	if err != nil {
 		return err

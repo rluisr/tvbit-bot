@@ -30,6 +30,7 @@ type TVRepository interface {
 	SaveClosedPnL(closedPnL []*domain.ClosedPnL) error
 	UpdateOrder(*domain.Order) error
 	GetUniqueSymbol() ([]string, error)
+	TruncateClosedPnL() error
 }
 
 type BybitRepository interface {
