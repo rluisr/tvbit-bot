@@ -109,10 +109,19 @@ func (r *BybitRepository) GetClosedPNL(param bybit.V5GetClosedPnLParam) (*bybit.
 // CalculateTPSL returns TP and SL
 // "tp" and "sl" are not allowed to be 0 or not specified.
 func (r *BybitRepository) CalculateTPSL(req *domain.Order) error {
-	// INFO: テストネットとメインでは価格差が大きく、テストネットで注文を行う際に TP/SL の範囲外になる可能性があり、注文が失敗することがある
-	currentPrice, err := r.getPrice(req.Symbol)
-	if err != nil {
-		return err
+	var (
+		currentPrice float64
+		err          error
+	)
+
+	if req.Type == "Market" {
+		// INFO: テストネットとメインでは価格差が大きく、テストネットで注文を行う際に TP/SL の範囲外になる可能性があり、注文が失敗することがある
+		currentPrice, err = r.getPrice(req.Symbol)
+		if err != nil {
+			return err
+		}
+	} else {
+		currentPrice = utils.StringToFloat64(req.Price)
 	}
 
 	var (
