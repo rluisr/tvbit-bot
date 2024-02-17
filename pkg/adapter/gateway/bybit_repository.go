@@ -114,8 +114,11 @@ func (r *BybitRepository) FetchOpenOrder(req *domain.Order) error {
 }
 
 func (r *BybitRepository) GetOpenOrders() (*bybit.V5GetOrdersResponse, error) {
+	settle := bybit.CoinUSDT
+
 	orders, err := r.Client.V5().Order().GetOpenOrders(bybit.V5GetOpenOrdersParam{
-		Category: bybit.CategoryV5Linear,
+		Category:   bybit.CategoryV5Linear,
+		SettleCoin: &settle,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed GetOpenOrders: %w", err)
