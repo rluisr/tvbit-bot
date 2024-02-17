@@ -21,6 +21,10 @@
 package external
 
 import (
+	"fmt"
+	"log"
+	"os"
+	"os/signal"
 	"time"
 
 	"github.com/go-co-op/gocron/v2"
@@ -31,7 +35,6 @@ func Cron() {
 	if err != nil {
 		panic(err)
 	}
-	defer s.Shutdown() //nolint:errcheck // ignore error
 
 	_, err = s.NewJob(
 		gocron.CronJob("0 * * * *", false),
@@ -48,7 +51,7 @@ func Cron() {
 		tvController.Interactor.TVRepository.Logging().Error("NewJob: FetchOrder", err.Error(), err)
 	}
 
-	_, err = s.NewJob(
+	job, err := s.NewJob(
 		gocron.CronJob("* * * * *", false),
 		gocron.NewTask(func() {
 			icErr := tvController.InventoryCheck(5 * time.Minute)
@@ -64,4 +67,17 @@ func Cron() {
 	}
 
 	s.Start()
+
+	nextTime, err := job.NextRun()
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	tvController.Interactor.TVRepository.Logging().Info(fmt.Sprintf("Next run: %s", nextTime))
+
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, os.Interrupt)
+	<-quit
+
+	_ = s.Shutdown()
 }
