@@ -59,8 +59,8 @@ github.com/gorilla/websocket v1.5.1 h1:gmztn0JnHVt9JZquRuzLw3g4wouNVzKL15iLr/zn/
 github.com/gorilla/websocket v1.5.1/go.mod h1:x3kM2JMyaluk02fnUJpQuwD2dCS5NDG2ZHL0uE0tcaY=
 github.com/grpc-ecosystem/grpc-gateway/v2 v2.19.0 h1:Wqo399gCIufwto+VfwCSvsnfGpF/w5E9CNxSwbpD6No=
 github.com/grpc-ecosystem/grpc-gateway/v2 v2.19.0/go.mod h1:qmOFXW2epJhM0qSnUUYpldc7gVz2KMQwJ/QYCDIa7XU=
-github.com/hirokisan/bybit/v2 v2.28.5 h1:NfyKf6KRmRx/pz3fWe4zQw+ZzCMqeOcHZhC5ChN9l5k=
-github.com/hirokisan/bybit/v2 v2.28.5/go.mod h1:u+BQHdXZQ/lZSV+6p6ZNiHTgAVEjAOq6Me/onG3lBOE=
+github.com/hirokisan/bybit/v2 v2.29.0 h1:eLVW4dD/HBKGb8eaxRSc9tcfW4eX1EJ6WNuiVlDB2Yg=
+github.com/hirokisan/bybit/v2 v2.29.0/go.mod h1:cRtDPA0uGcRWiAouCJxQlsx/Jx0/xrtHLwtWhO/sohk=
 github.com/ic2hrmk/promtail v0.0.5 h1:sU+PdDMONGuP4co2tosFeJJuQDwxOpbNUJv3yb866Qo=
 github.com/ic2hrmk/promtail v0.0.5/go.mod h1:MIkZC9eMW2duQsA1z3tRTBSc3WgMjTilq70AeyqvJMo=
 github.com/jinzhu/inflection v1.0.0 h1:K317FqzuhWc8YvSVlFMCCUb36O/S9MCKRDI7QkRKD/E=

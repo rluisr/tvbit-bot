@@ -6,7 +6,7 @@ require (
 	github.com/Netflix/go-env v0.0.0-20220526054621-78278af1949d
 	github.com/gin-gonic/gin v1.9.1
 	github.com/go-co-op/gocron/v2 v2.2.4
-	github.com/hirokisan/bybit/v2 v2.28.5
+	github.com/hirokisan/bybit/v2 v2.29.0
 	github.com/ic2hrmk/promtail v0.0.5
 	github.com/shopspring/decimal v1.3.1
 	go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin v0.48.0
