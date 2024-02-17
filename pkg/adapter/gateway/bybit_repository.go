@@ -36,11 +36,11 @@ func (r *BybitRepository) CreateOrder(req *domain.Order) error {
 	}
 
 	if req.Type == "Limit" {
-		postOnly := bybit.TimeInForcePostOnly
+		tif := bybit.TimeInForceImmediateOrCancel
 
 		orderParam.OrderType = bybit.OrderTypeLimit
 		orderParam.Price = &req.Price
-		orderParam.TimeInForce = &postOnly
+		orderParam.TimeInForce = &tif
 	}
 
 	if req.Side == "Buy" {
