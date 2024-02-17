@@ -65,7 +65,7 @@ func Connect() (*gorm.DB, *gorm.DB, error) {
 	if err != nil {
 		return nil, nil, err
 	}
-	err = rwDB.AutoMigrate(&domain.Order{}, &domain.WalletHistory{})
+	err = rwDB.AutoMigrate(&domain.Order{}, &domain.ClosedPnL{})
 	if err != nil {
 		return nil, nil, err
 	}

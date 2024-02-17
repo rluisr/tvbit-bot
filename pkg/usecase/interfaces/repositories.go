@@ -19,6 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package interfaces
 
 import (
+	"github.com/hirokisan/bybit/v2"
 	"github.com/rluisr/tvbit-bot/pkg/domain"
 	"github.com/rluisr/tvbit-bot/pkg/external/logging"
 )
@@ -26,13 +27,15 @@ import (
 type TVRepository interface {
 	Logging() *logging.Logging
 	SaveOrder(*domain.Order) error
+	SaveClosedPnL(closedPnL []*domain.ClosedPnL) error
 	UpdateOrder(*domain.Order) error
-	SaveWalletHistories([]domain.WalletHistory) error
+	GetUniqueSymbol() ([]string, error)
 }
 
 type BybitRepository interface {
 	CreateOrder(*domain.Order) error
-	FetchOrder(*domain.Order) error
+	FetchOpenOrder(*domain.Order) error
+	GetClosedPNL(param bybit.V5GetClosedPnLParam) (*bybit.V5GetClosedPnLResponse, error)
 	CalculateTPSL(*domain.Order) error
 	GetWalletBalance() (float64, error)
 }

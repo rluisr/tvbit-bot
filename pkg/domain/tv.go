@@ -19,6 +19,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package domain
 
 import (
+	"time"
+
 	"github.com/shopspring/decimal"
 	"gorm.io/gorm"
 )
@@ -36,7 +38,27 @@ type Order struct {
 	QTY        string          `gorm:"type:float" json:"qty" binding:"required"`
 	TP         string          `gorm:"type:float" json:"tp" binding:"required"`
 	SL         string          `gorm:"type:float" json:"sl" binding:"required"`
-	PL         decimal.Decimal `gorm:"type:decimal(10,4)" json:"-"`
+}
+
+type ClosedPnL struct {
+	ID            int             `gorm:"primaryKey"`
+	OrderID       string          `gorm:"type:varchar(255);uniqueIndex:order_id;not null"`
+	Symbol        string          `gorm:"type:varchar(255);not null"`
+	Side          string          `gorm:"type:varchar(255);not null"`
+	Qty           string          `gorm:"type:float;not null"`
+	OrderPrice    decimal.Decimal `gorm:"type:decimal(10,4);not null"`
+	ClosedSize    decimal.Decimal `gorm:"type:decimal(10,4);not null"`
+	CumEntryValue decimal.Decimal `gorm:"type:decimal(10,4);not null"`
+	AvgEntryPrice decimal.Decimal `gorm:"type:decimal(10,4);not null"`
+	CumExitValue  decimal.Decimal `gorm:"type:decimal(10,4);not null"`
+	AvgExitPrice  decimal.Decimal `gorm:"type:decimal(10,4);not null"`
+	ClosedPnL     decimal.Decimal `gorm:"type:decimal(10,4);column:closed_pnl;not null"`
+	CreatedAt     time.Time       `gorm:"type:datetime;not null"`
+	UpdatedAt     time.Time       `gorm:"type:datetime;not null"`
+}
+
+func (c ClosedPnL) TableName() string {
+	return "closed_pnl"
 }
 
 type TVOrderResponse struct {

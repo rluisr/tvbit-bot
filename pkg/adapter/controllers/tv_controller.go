@@ -58,3 +58,8 @@ func (controller *TVController) Handle(c *gin.Context) {
 
 	c.JSON(200, order)
 }
+
+// FetchOrder は PL が 0 のままになっている注文の PL を取得する
+func (controller *TVController) FetchOrder() error {
+	return controller.Interactor.FetchPL()
+}

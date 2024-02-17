@@ -45,6 +45,13 @@ func (r *TVRepository) SaveOrder(order *domain.Order) error {
 	return r.RWDB.Save(order).Error
 }
 
-func (r *TVRepository) SaveWalletHistories(histories []domain.WalletHistory) error {
-	return r.RWDB.Create(&histories).Error
+func (r *TVRepository) SaveClosedPnL(closedPnL []*domain.ClosedPnL) error {
+	return r.RWDB.CreateInBatches(closedPnL, 1000).Error
+}
+
+// GetUniqueSymbol returns unique symbol
+func (r *TVRepository) GetUniqueSymbol() ([]string, error) {
+	var symbols []string
+	err := r.RODB.Model(&domain.Order{}).Distinct("symbol").Find(&symbols).Error
+	return symbols, err
 }

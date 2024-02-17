@@ -36,8 +36,11 @@ func (r *BybitRepository) CreateOrder(req *domain.Order) error {
 	}
 
 	if req.Type == "Limit" {
+		postOnly := bybit.TimeInForcePostOnly
+
 		orderParam.OrderType = bybit.OrderTypeLimit
 		orderParam.Price = &req.Price
+		orderParam.TimeInForce = &postOnly
 	}
 
 	if req.Side == "Buy" {
@@ -57,7 +60,7 @@ func (r *BybitRepository) CreateOrder(req *domain.Order) error {
 	return nil
 }
 
-func (r *BybitRepository) FetchOrder(req *domain.Order) error {
+func (r *BybitRepository) FetchOpenOrder(req *domain.Order) error {
 	symbol := bybit.SymbolV5(req.Symbol)
 	settle := bybit.CoinUSDT
 
@@ -80,7 +83,14 @@ func (r *BybitRepository) FetchOrder(req *domain.Order) error {
 			continue
 		}
 
-		entryPrice, err := decimal.NewFromString(order.Result.List[0].AvgPrice)
+		var entryPriceStr string
+		if req.Type == "Market" {
+			entryPriceStr = order.Result.List[0].AvgPrice
+		} else {
+			entryPriceStr = req.Price
+		}
+
+		entryPrice, err := decimal.NewFromString(entryPriceStr)
 		if err != nil {
 			return err
 		}
@@ -90,6 +100,10 @@ func (r *BybitRepository) FetchOrder(req *domain.Order) error {
 	}
 
 	return nil
+}
+
+func (r *BybitRepository) GetClosedPNL(param bybit.V5GetClosedPnLParam) (*bybit.V5GetClosedPnLResponse, error) {
+	return r.Client.V5().Position().GetClosedPnL(param)
 }
 
 // CalculateTPSL returns TP and SL

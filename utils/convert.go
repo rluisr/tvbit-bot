@@ -20,7 +20,10 @@
 
 package utils
 
-import "strconv"
+import (
+	"strconv"
+	"time"
+)
 
 func StringToFloat64(str string) float64 {
 	f, err := strconv.ParseFloat(str, 64)
@@ -32,4 +35,19 @@ func StringToFloat64(str string) float64 {
 
 func Float64ToString(f float64) string {
 	return strconv.FormatFloat(f, 'f', -1, 64)
+}
+
+func TimestampMSToTime(timestampStr string) (time.Time, error) {
+	timestampInt64, err := strconv.ParseInt(timestampStr, 10, 64)
+	if err != nil {
+		return time.Now(), err
+	}
+
+	// Convert milliseconds to seconds
+	timestampSec := timestampInt64 / 1000
+	timestampNanoSec := (timestampInt64 % 1000) * int64(time.Millisecond)
+
+	t := time.Unix(timestampSec, timestampNanoSec)
+
+	return t, nil
 }

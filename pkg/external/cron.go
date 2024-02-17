@@ -18,16 +18,32 @@
  * /
  */
 
-package domain
+package external
 
 import (
-	"github.com/shopspring/decimal"
-	"gorm.io/gorm"
+	"github.com/go-co-op/gocron/v2"
 )
 
-type WalletHistory struct {
-	gorm.Model
-	Type     string          `gorm:"not null;comment: spot/usdc/futures etc"`
-	Balance  decimal.Decimal `gorm:"type:decimal(10,4);not null"`
-	TotalRPL decimal.Decimal `gorm:"type:decimal(10,4);not null"`
+func Cron() {
+	s, err := gocron.NewScheduler()
+	if err != nil {
+		panic(err)
+	}
+	defer s.Shutdown() //nolint:errcheck // ignore error
+
+	_, err = s.NewJob(
+		gocron.CronJob("0 0 * * * ?", true),
+		gocron.NewTask(func() {
+			foErr := tvController.FetchOrder()
+			if foErr != nil {
+				tvController.Interactor.TVRepository.Logging().Error("FetchOrder", foErr.Error(), foErr)
+			}
+			tvController.Interactor.TVRepository.Logging().Info("FetchOrder is done")
+		}),
+	)
+	if err != nil {
+		tvController.Interactor.TVRepository.Logging().Error("NewJob", err.Error(), err)
+	}
+
+	s.Start()
 }

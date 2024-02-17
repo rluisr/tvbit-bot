@@ -37,5 +37,7 @@ func main() {
 		panic(fmt.Errorf("failed to initialization %w", err))
 	}
 
+	go external.Cron()
+
 	external.Run(SOURCE)
 }
