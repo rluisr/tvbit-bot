@@ -215,7 +215,9 @@ func (i *TVInteractor) InventoryCheck(cancelAfter time.Duration) error {
 	}
 
 	for _, order := range orders.Result.List {
-		if order.OrderStatus == bybit.OrderStatusUntriggered {
+		// New: 新規注文（ポジションは持ってない）
+		// Untriggered: TP/SL のみの注文（ポジション注文は通っているが、TP/SL 注文がある状態）
+		if order.OrderStatus == bybit.OrderStatusNew {
 			createdAt, cErr := utils.TimestampMSToTime(order.CreatedTime)
 			if cErr != nil {
 				return cErr

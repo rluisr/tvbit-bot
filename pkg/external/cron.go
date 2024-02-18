@@ -21,8 +21,6 @@
 package external
 
 import (
-	"fmt"
-	"log"
 	"os"
 	"os/signal"
 	"time"
@@ -51,8 +49,11 @@ func Cron() {
 		tvController.Interactor.TVRepository.Logging().Error("NewJob: FetchOrder", err.Error(), err)
 	}
 
-	job, err := s.NewJob(
-		gocron.CronJob("* * * * *", false),
+	_, err = s.NewJob(
+		// KeepAlive を続けるために短い間隔で行う
+		gocron.DurationJob(
+			3*time.Second,
+		),
 		gocron.NewTask(func() {
 			icErr := tvController.InventoryCheck(5 * time.Minute)
 			if icErr != nil {
@@ -67,13 +68,6 @@ func Cron() {
 	}
 
 	s.Start()
-
-	nextTime, err := job.NextRun()
-	if err != nil {
-		log.Println(err)
-		return
-	}
-	tvController.Interactor.TVRepository.Logging().Info(fmt.Sprintf("Next run: %s", nextTime))
 
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, os.Interrupt)
