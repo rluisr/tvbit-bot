@@ -60,7 +60,6 @@ func Cron() {
 				tvController.Interactor.TVRepository.Logging().Error("InventoryCheck", icErr.Error(), icErr)
 				return
 			}
-			tvController.Interactor.TVRepository.Logging().Info("InventoryCheck is done")
 		}),
 	)
 	if err != nil {
