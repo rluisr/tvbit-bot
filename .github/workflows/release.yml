@@ -39,7 +39,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: inject go-build-cache into docker
-        uses: reproducible-containers/buildkit-cache-dance@v2.1.2
+        uses: reproducible-containers/buildkit-cache-dance@v2.1.4
         with:
           cache-source: go-build-cache
 
