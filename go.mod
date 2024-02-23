@@ -10,9 +10,9 @@ require (
 	github.com/ic2hrmk/promtail v0.0.5
 	github.com/shopspring/decimal v1.3.1
 	go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin v0.48.0
-	go.opentelemetry.io/otel v1.23.1
+	go.opentelemetry.io/otel v1.24.0
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp v1.23.1
-	go.opentelemetry.io/otel/sdk v1.23.1
+	go.opentelemetry.io/otel/sdk v1.24.0
 	gorm.io/driver/mysql v1.5.4
 	gorm.io/gorm v1.25.7
 	gorm.io/plugin/opentelemetry v0.1.4
@@ -53,8 +53,8 @@ require (
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	github.com/ugorji/go/codec v1.2.12 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.23.1 // indirect
-	go.opentelemetry.io/otel/metric v1.23.1 // indirect
-	go.opentelemetry.io/otel/trace v1.23.1 // indirect
+	go.opentelemetry.io/otel/metric v1.24.0 // indirect
+	go.opentelemetry.io/otel/trace v1.24.0 // indirect
 	go.opentelemetry.io/proto/otlp v1.1.0 // indirect
 	golang.org/x/arch v0.7.0 // indirect
 	golang.org/x/crypto v0.19.0 // indirect
