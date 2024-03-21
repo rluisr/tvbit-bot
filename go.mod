@@ -13,7 +13,7 @@ require (
 	go.opentelemetry.io/otel v1.23.1
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp v1.23.1
 	go.opentelemetry.io/otel/sdk v1.23.1
-	gorm.io/driver/mysql v1.5.4
+	gorm.io/driver/mysql v1.5.6
 	gorm.io/gorm v1.25.7
 	gorm.io/plugin/opentelemetry v0.1.4
 )
